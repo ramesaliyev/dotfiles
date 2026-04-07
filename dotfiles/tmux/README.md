@@ -11,12 +11,17 @@ Config (`~/.tmux.conf`) is bootstrapped automatically. Plugins are managed by [T
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 ```
 
-**2. Start a new tmux session** — config loads automatically:
+**2. Start a new tmux session:**
 ```bash
 tmux
 ```
 
-**3. Install plugins** (inside tmux):
+**3. Source the config** (inside tmux) — on first install the active prefix is tmux's default `Ctrl+B`, since our custom `Ctrl+A` isn't loaded yet. If you previously had a custom prefix configured, use that instead:
+```
+Ctrl+B  then  :source-file ~/.tmux.conf
+```
+
+**4. Install plugins:**
 ```
 Ctrl+A  then  I
 ```
@@ -28,10 +33,8 @@ TPM reloads config after installing. Sessions will auto-save every 10 minutes on
 Running tmux sessions doesn't pick up config changes on disk automatically. Reload it manually from any session:
 
 ```
-Ctrl+A  then  r
+Ctrl+A  then  R
 ```
-
-> If plugins aren't installed yet (e.g. right after bootstrap), use `Ctrl+A :source-file ~/.tmux.conf` instead — `r` is a shortcut provided by tmux-sensible.
 
 If new plugins were added, install them:
 ```
