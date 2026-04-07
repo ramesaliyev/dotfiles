@@ -17,7 +17,7 @@ from scripts.common import (
     save_state,
     warn,
 )
-from scripts.modules import tmux
+from scripts.modules import tmux, zsh
 
 REPO_ROOT = Path(__file__).parent.parent
 
@@ -155,6 +155,21 @@ def main() -> None:
             counts[result] += 1
 
     print_module_note(tmux)
+
+    # zsh
+    print("\n[zsh]")
+    zsh_counts = zsh.run_bootstrap(dry_run=args.dry_run)
+    print(
+        f"  {zsh_counts['installed']} plugin(s) installed, "
+        f"{zsh_counts['skipped']} skipped"
+    )
+    missing = zsh.check_zshrc()
+    if missing:
+        warn(
+            "plugins missing from ~/.zshrc plugins=() — add them and run: source ~/.zshrc\n"
+            + "".join(f"    - {p}\n" for p in missing).rstrip()
+        )
+    print_module_note(zsh)
 
     if not args.dry_run:
         save_state(state)
