@@ -41,3 +41,18 @@ If new plugins were added, install them:
 ```
 Ctrl+A  then  I
 ```
+
+## Tips
+
+### tmux opens the wrong shell
+
+tmux reads `$SHELL` from the **server process environment** — the environment that existed when the tmux server was first started, not from whatever shell you ran `tmux` from. tmux-sensible then sets `default-shell` from that value. New sessions and windows always inherit from the running server, not from the calling shell.
+
+To fix the underlying shell, see [zsh README](../zsh/README.md#set-zsh-as-the-default-shell).
+
+Even after fixing `$SHELL`, if a tmux server is already running it still holds the old environment. Kill it and start fresh:
+
+```bash
+tmux kill-server
+tmux
+```

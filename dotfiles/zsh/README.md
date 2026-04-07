@@ -2,7 +2,31 @@
 
 ## 1. Install zsh
 
-Make sure [zsh is installed](https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH).
+Make sure [zsh is installed](https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH) and is the default shell.
+
+## Set zsh as the default shell
+
+**Option 1 — change the login shell (preferred):**
+
+```bash
+chsh -s $(which zsh)
+```
+
+Log out and back in.
+
+**Option 2 — if `chsh` is unavailable** (e.g. LDAP/NIS managed servers), apply both of the following:
+
+Add to `~/.bash_profile`:
+```bash
+exec zsh
+```
+
+Add to `~/.zshrc`:
+```bash
+export SHELL=$(which zsh)
+```
+
+`exec zsh` replaces the bash login process with zsh on every login, so zsh becomes the effective shell. `export SHELL=$(which zsh)` ensures `$SHELL` is explicitly set when zsh starts, so any process that reads it (e.g. tmux) sees the correct value. Log out and back in for it to take effect.
 
 ## 2. Install oh-my-zsh
 
