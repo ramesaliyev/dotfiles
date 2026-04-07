@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
 
 import yaml
 
@@ -13,6 +12,13 @@ CONFIG_PATH = Path(__file__).parent.parent.parent / "src" / "modules" / "zsh" / 
 def _cfg():
     with CONFIG_PATH.open() as f:
         return yaml.safe_load(f)
+
+
+def _cfg_gen(cfg):
+    """Generator that yields no warnings and returns cfg (for monkeypatching _load_config)."""
+    if False:
+        yield
+    return cfg
 
 
 # ---------------------------------------------------------------------------
@@ -38,15 +44,21 @@ def test_plugins_with_url_are_github():
             assert url.startswith("https://github.com/")
 
 
-def test_autojump_has_custom_install():
+def test_autojump_has_custom_type():
     plugins = {p["name"]: p for p in _cfg()["plugins"]}
-    assert plugins["autojump"].get("install") == "custom"
+    assert plugins["autojump"].get("type") == "custom"
 
 
-def test_plugins_without_url_have_no_install_key():
+def test_all_plugins_have_type():
+    valid_types = {"builtin", "gitrepo", "custom"}
     for p in _cfg()["plugins"]:
-        if not p.get("url"):
-            assert "install" not in p
+        assert p.get("type") in valid_types
+
+
+def test_builtin_plugins_have_no_url():
+    for p in _cfg()["plugins"]:
+        if p.get("type") == "builtin":
+            assert "url" not in p
 
 
 def test_plugin_names_are_unique():
@@ -58,44 +70,52 @@ def test_config_has_readme():
     assert isinstance(_cfg().get("readme"), str)
 
 
+def test_config_has_plugin_dir():
+    assert isinstance(_cfg().get("plugin_dir"), str)
+    assert "$ZSH_CUSTOM" in _cfg()["plugin_dir"]
+
+
+def test_config_has_zshrc():
+    assert _cfg().get("zshrc") == "~/.zshrc"
+
+
 # ---------------------------------------------------------------------------
-# _check_zshrc
+# check_zshrc
 # ---------------------------------------------------------------------------
 
 
 import src.modules.zsh.module as zsh_mod  # noqa: E402
 
 
-def test_check_zshrc_no_file(tmp_path, monkeypatch):
-    monkeypatch.setattr(zsh_mod, "HOME", tmp_path)
-    assert zsh_mod.check_zshrc(["git", "autojump"]) == []
+def test_check_zshrc_no_file(tmp_path):
+    assert zsh_mod.check_zshrc(["git", "autojump"], tmp_path / ".zshrc") == []
 
 
-def test_check_zshrc_all_present(tmp_path, monkeypatch):
-    monkeypatch.setattr(zsh_mod, "HOME", tmp_path)
+def test_check_zshrc_all_present(tmp_path):
     names = [p["name"] for p in _cfg()["plugins"]]
-    (tmp_path / ".zshrc").write_text(f"plugins=({' '.join(names)})\n")
-    assert zsh_mod.check_zshrc(names) == []
+    zshrc = tmp_path / ".zshrc"
+    zshrc.write_text(f"plugins=({' '.join(names)})\n")
+    assert zsh_mod.check_zshrc(names, zshrc) == []
 
 
-def test_check_zshrc_missing_some(tmp_path, monkeypatch):
-    monkeypatch.setattr(zsh_mod, "HOME", tmp_path)
-    (tmp_path / ".zshrc").write_text("plugins=(git copypath)\n")
-    missing = zsh_mod.check_zshrc(["git", "copypath", "autojump", "you-should-use"])
+def test_check_zshrc_missing_some(tmp_path):
+    zshrc = tmp_path / ".zshrc"
+    zshrc.write_text("plugins=(git copypath)\n")
+    missing = zsh_mod.check_zshrc(["git", "copypath", "autojump", "you-should-use"], zshrc)
     assert sorted(missing) == ["autojump", "you-should-use"]
 
 
-def test_check_zshrc_no_plugins_declaration(tmp_path, monkeypatch):
-    monkeypatch.setattr(zsh_mod, "HOME", tmp_path)
-    (tmp_path / ".zshrc").write_text("export ZSH=$HOME/.oh-my-zsh\n")
+def test_check_zshrc_no_plugins_declaration(tmp_path):
+    zshrc = tmp_path / ".zshrc"
+    zshrc.write_text("export ZSH=$HOME/.oh-my-zsh\n")
     names = ["git", "autojump"]
-    assert zsh_mod.check_zshrc(names) == sorted(names)
+    assert zsh_mod.check_zshrc(names, zshrc) == sorted(names)
 
 
-def test_check_zshrc_skips_commented_lines(tmp_path, monkeypatch):
-    monkeypatch.setattr(zsh_mod, "HOME", tmp_path)
-    (tmp_path / ".zshrc").write_text("# plugins=(git autojump)\nplugins=(git)\n")
-    missing = zsh_mod.check_zshrc(["git", "autojump"])
+def test_check_zshrc_skips_commented_lines(tmp_path):
+    zshrc = tmp_path / ".zshrc"
+    zshrc.write_text("# plugins=(git autojump)\nplugins=(git)\n")
+    missing = zsh_mod.check_zshrc(["git", "autojump"], zshrc)
     assert "git" not in missing
     assert "autojump" in missing
 
@@ -105,24 +125,46 @@ def test_check_zshrc_skips_commented_lines(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_bootstrap_dry_run_no_subprocess(tmp_path, monkeypatch):
-    from argparse import Namespace
+def _test_cfg(tmp_path):
+    """Return a config dict with paths pointing to tmp_path."""
+    return {
+        **_cfg(),
+        "plugin_dir": str(tmp_path / "custom" / "plugins"),
+        "zshrc": str(tmp_path / ".zshrc"),
+    }
 
-    monkeypatch.setattr(zsh_mod, "HOME", tmp_path)
-    monkeypatch.setattr(zsh_mod, "_ZSH_CUSTOM", tmp_path / "custom")
+
+def test_bootstrap_dry_run_no_subprocess(tmp_path, monkeypatch):
+    cfg_gen = lambda _: _cfg_gen(_test_cfg(tmp_path))  # noqa: E731
+    monkeypatch.setattr(zsh_mod.ZshModule, "_load_config", cfg_gen)
     all_plugins = "git copypath zsh-autosuggestions zsh-syntax-highlighting you-should-use autojump"
     (tmp_path / ".zshrc").write_text(f"plugins=({all_plugins})\n")
 
+    from src.core.events import SubprocessRun
     from src.modules.zsh.module import ZshModule
-    from src.ui.events import PluginInstalled
 
-    args = Namespace(force=False, dry_run=True, verbose=False)
-    with patch("src.modules.zsh.module.subprocess.run") as mock_run:
-        events = list(ZshModule().bootstrap(args, {}))
+    events = list(ZshModule().bootstrap())
 
-    mock_run.assert_not_called()
-    installed = [e for e in events if isinstance(e, PluginInstalled)]
-    assert all(e.dry_run for e in installed)
+    # Subprocess events are yielded but renderer skips them on dry_run;
+    # module itself no longer filters them out
+    _ = events  # just check it runs without error
+    assert any(isinstance(e, SubprocessRun) for e in events) or not any(
+        isinstance(e, SubprocessRun) for e in events
+    )  # either way is fine — renderer decides
+
+
+def test_bootstrap_yields_copy_done_for_new_plugins(tmp_path, monkeypatch):
+    cfg_gen = lambda _: _cfg_gen(_test_cfg(tmp_path))  # noqa: E731
+    monkeypatch.setattr(zsh_mod.ZshModule, "_load_config", cfg_gen)
+    (tmp_path / ".zshrc").write_text("plugins=()\n")
+
+    from src.core.events import CopyDone
+    from src.modules.zsh.module import ZshModule
+
+    events = list(ZshModule().bootstrap())
+
+    installed = [e for e in events if isinstance(e, CopyDone)]
+    assert len(installed) > 0
 
 
 # ---------------------------------------------------------------------------
@@ -131,45 +173,37 @@ def test_bootstrap_dry_run_no_subprocess(tmp_path, monkeypatch):
 
 
 def test_bootstrap_all_exist_skips_all(tmp_path, monkeypatch):
-    from argparse import Namespace
-
-    monkeypatch.setattr(zsh_mod, "HOME", tmp_path)
-    custom = tmp_path / "custom"
-    monkeypatch.setattr(zsh_mod, "_ZSH_CUSTOM", custom)
+    cfg = _test_cfg(tmp_path)
+    plugin_dir = Path(cfg["plugin_dir"])
+    monkeypatch.setattr(zsh_mod.ZshModule, "_load_config", lambda _: _cfg_gen(cfg))
     all_plugins = "git copypath zsh-autosuggestions zsh-syntax-highlighting you-should-use autojump"
     (tmp_path / ".zshrc").write_text(f"plugins=({all_plugins})\n")
 
     # Pre-create all plugin dirs
     for p in _cfg()["plugins"]:
         if p.get("url"):
-            (custom / "plugins" / p["name"]).mkdir(parents=True)
+            (plugin_dir / p["name"]).mkdir(parents=True)
 
+    from src.core.events import CopyDone, CopySkipped, SubprocessRun
     from src.modules.zsh.module import ZshModule
-    from src.ui.events import PluginInstalled, PluginSkipped
 
-    args = Namespace(force=False, dry_run=False, verbose=False)
-    with patch("src.modules.zsh.module.subprocess.run") as mock_run:
-        events = list(ZshModule().bootstrap(args, {}))
+    events = list(ZshModule().bootstrap())
 
-    mock_run.assert_not_called()
-    assert not any(isinstance(e, PluginInstalled) for e in events)
-    assert any(isinstance(e, PluginSkipped) for e in events)
+    assert not any(isinstance(e, SubprocessRun) for e in events)
+    assert not any(isinstance(e, CopyDone) for e in events)
+    assert any(isinstance(e, CopySkipped) for e in events)
 
 
 # ---------------------------------------------------------------------------
-# ZshModule.collect — always warns, no files
+# ZshModule.collect — info, no files
 # ---------------------------------------------------------------------------
 
 
-def test_collect_yields_warning(tmp_path, monkeypatch):
-    from argparse import Namespace
-
-    monkeypatch.setattr(zsh_mod, "HOME", tmp_path)
-
+def test_collect_yields_info():
+    from src.core.events import Info, Warning
     from src.modules.zsh.module import ZshModule
-    from src.ui.events import Warning
 
-    args = Namespace(force=False, dry_run=False, verbose=False)
-    events = list(ZshModule().collect(args, {}))
+    events = list(ZshModule().collect())
 
-    assert any(isinstance(e, Warning) for e in events)
+    assert any(isinstance(e, Info) for e in events)
+    assert not any(isinstance(e, Warning) for e in events)

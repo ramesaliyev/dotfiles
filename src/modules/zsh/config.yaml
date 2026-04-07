@@ -1,15 +1,23 @@
 plugins:
   - name: git
+    type: builtin
   - name: copypath
+    type: builtin
   - name: zsh-autosuggestions
+    type: gitrepo
     url: https://github.com/zsh-users/zsh-autosuggestions
   - name: zsh-syntax-highlighting
+    type: gitrepo
     url: https://github.com/zsh-users/zsh-syntax-highlighting
   - name: you-should-use
+    type: gitrepo
     url: https://github.com/MichaelAquilina/zsh-you-should-use.git
   - name: autojump
+    type: custom
     url: https://github.com/wting/autojump.git
-    install: custom
+
+plugin_dir: $ZSH_CUSTOM/plugins
+zshrc: ~/.zshrc
 
 readme: dotfiles/zsh/README.md
 

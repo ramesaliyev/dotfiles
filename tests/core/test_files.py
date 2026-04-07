@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from src.core.checksum import checksum
+from src.core.events import FileConflict, FileCopied, FileSkipped, Warning
 from src.core.files import sync_file
-from src.ui.events import FileConflict, FileCopied, FileSkipped, Warning
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -61,7 +61,6 @@ def test_dest_missing_copies_file(tmp_path):
     assert len(events) == 1
     assert isinstance(events[0], FileCopied)
     assert events[0].action == "copied"
-    assert events[0].dry_run is False
     assert dest.read_bytes() == b"hello"
     assert str(dest) in state["entries"]
 
@@ -74,7 +73,6 @@ def test_dest_missing_dry_run_no_write(tmp_path):
     events = _run(src, dest, state, dry_run=True)
 
     assert isinstance(events[0], FileCopied)
-    assert events[0].dry_run is True
     assert not dest.exists()
     assert state["entries"] == {}
 
@@ -243,27 +241,3 @@ def test_collect_direction_repo_changed_warns(tmp_path):
 
     assert isinstance(events[0], Warning)
     assert repo.read_bytes() == b"repo-only-change"
-
-
-# ---------------------------------------------------------------------------
-# Old-style state migration (repo_checksum / bootstrapped_at)
-# ---------------------------------------------------------------------------
-
-
-def test_migrates_old_style_state_entry(tmp_path):
-    src = _make_file(tmp_path / "src.conf", b"v1")
-    dest = _make_file(tmp_path / "dest.conf", b"v1")
-    old_cs = checksum(src)
-    old_entry = {
-        "repo_rel": "src.conf",
-        "repo_checksum": old_cs,
-        "dest_checksum": old_cs,
-        "bootstrapped_at": "2024-01-01T00:00:00+00:00",
-    }
-    state = _state({str(dest): old_entry})
-
-    # Nothing changed — should skip after migration
-    events = _run(src, dest, state)
-    assert isinstance(events[0], FileSkipped)
-    # Entry should be migrated to new format
-    assert "src_checksum" in state["entries"][str(dest)]

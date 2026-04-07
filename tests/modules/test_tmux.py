@@ -76,45 +76,34 @@ def test_all_machine_repo_pairs_unique():
 # ---------------------------------------------------------------------------
 
 
-def test_bootstrap_yields_module_start_and_end(monkeypatch, tmp_path):
-    from argparse import Namespace
-
+def test_bootstrap_yields_module_start_and_end():
+    from src.core.events import ModuleEnd, ModuleStart
     from src.modules.tmux.module import TmuxModule
-    from src.ui.events import ModuleEnd, ModuleStart
 
-    # Create dummy repo files so sync_file doesn't warn
-    cfg = _cfg()
-    for entry in cfg["files"]:
-        repo_file = tmp_path / entry["repo"]
-        repo_file.parent.mkdir(parents=True, exist_ok=True)
-        repo_file.write_bytes(b"content")
-
-    import src.modules.tmux.module as tmux_mod
-
-    monkeypatch.setattr(tmux_mod, "REPO_ROOT", tmp_path)
-
-    args = Namespace(force=False, dry_run=True, verbose=False)
-    state = {"version": 1, "entries": {}}
-    events = list(TmuxModule().bootstrap(args, state))
+    events = list(TmuxModule().bootstrap())
 
     assert isinstance(events[0], ModuleStart)
     assert events[0].name == "tmux"
     assert isinstance(events[-1], ModuleEnd)
     assert events[-1].name == "tmux"
+    assert not hasattr(events[-1], "counts")
 
 
-def test_collect_yields_module_start_and_end(monkeypatch, tmp_path):
-    from argparse import Namespace
-
-    import src.modules.tmux.module as tmux_mod
+def test_bootstrap_yields_sync_file_events():
+    from src.core.events import SyncFile
     from src.modules.tmux.module import TmuxModule
-    from src.ui.events import ModuleEnd, ModuleStart
 
-    monkeypatch.setattr(tmux_mod, "REPO_ROOT", tmp_path)
+    events = list(TmuxModule().bootstrap())
 
-    args = Namespace(force=False, dry_run=True, verbose=False)
-    state = {"version": 1, "entries": {}}
-    events = list(TmuxModule().collect(args, state))
+    sync_events = [e for e in events if isinstance(e, SyncFile)]
+    assert len(sync_events) == len(_cfg()["files"])
+
+
+def test_collect_yields_module_start_and_end():
+    from src.core.events import ModuleEnd, ModuleStart
+    from src.modules.tmux.module import TmuxModule
+
+    events = list(TmuxModule().collect())
 
     assert isinstance(events[0], ModuleStart)
     assert isinstance(events[-1], ModuleEnd)

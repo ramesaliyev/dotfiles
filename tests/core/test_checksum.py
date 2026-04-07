@@ -5,7 +5,8 @@ from __future__ import annotations
 import hashlib
 from datetime import UTC, datetime
 
-from src.core.checksum import checksum, now_iso
+from src.core.checksum import checksum
+from src.core.time import now_iso
 
 
 def test_checksum_deterministic(tmp_path):

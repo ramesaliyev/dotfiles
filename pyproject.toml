@@ -5,8 +5,8 @@ requires-python = ">=3.14"
 dependencies = ["pyyaml>=6"]
 
 [project.scripts]
-collect   = "src.collect:main"
-bootstrap = "src.bootstrap:main"
+collect   = "src.cli:collect"
+bootstrap = "src.cli:bootstrap"
 setup-dev = "scripts.dev:main"
 
 [dependency-groups]
