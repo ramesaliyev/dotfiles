@@ -1,5 +1,7 @@
 # tmux
 
+You need to have [tmux already installed](https://github.com/tmux/tmux/wiki/Installing).
+
 Config (`~/.tmux.conf`) is bootstrapped automatically. Plugins are managed by [TPM](https://github.com/tmux-plugins/tpm) and are not committed to this repo.
 
 ## New machine
