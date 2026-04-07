@@ -6,13 +6,13 @@ from pathlib import Path
 
 from scripts.modules import tmux
 
-
 HOME = Path.home()
 
 
 # ---------------------------------------------------------------------------
 # COLLECT_MAPPINGS
 # ---------------------------------------------------------------------------
+
 
 def test_collect_mappings_has_two_entries():
     assert len(tmux.COLLECT_MAPPINGS) == 2
@@ -34,6 +34,7 @@ def test_collect_mappings_sources_under_home():
 # BOOTSTRAP_MAPPINGS
 # ---------------------------------------------------------------------------
 
+
 def test_bootstrap_mappings_has_two_entries():
     assert len(tmux.BOOTSTRAP_MAPPINGS) == 2
 
@@ -54,6 +55,7 @@ def test_bootstrap_mappings_dests_under_home():
 # Symmetry: collect ↔ bootstrap are inverses
 # ---------------------------------------------------------------------------
 
+
 def test_collect_bootstrap_are_inverses():
     collect_pairs = {(str(src), dest_rel) for src, dest_rel in tmux.COLLECT_MAPPINGS}
     bootstrap_pairs = {(dest_rel, str(dest)) for dest_rel, dest in tmux.BOOTSTRAP_MAPPINGS}
@@ -66,6 +68,7 @@ def test_collect_bootstrap_are_inverses():
 # ---------------------------------------------------------------------------
 # Theme directories
 # ---------------------------------------------------------------------------
+
 
 def test_collect_themes_src_under_home():
     assert str(tmux.COLLECT_THEMES_SRC).startswith(str(HOME))
@@ -86,6 +89,7 @@ def test_collect_themes_dest_rel_is_string():
 # ---------------------------------------------------------------------------
 # Metadata constants
 # ---------------------------------------------------------------------------
+
 
 def test_post_bootstrap_note_is_non_empty_string():
     assert isinstance(tmux.POST_BOOTSTRAP_NOTE, str)

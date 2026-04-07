@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
-
-import scripts.collect as collect
-
+from scripts import collect
 
 # ---------------------------------------------------------------------------
 # collect_file
 # ---------------------------------------------------------------------------
+
 
 def test_collect_file_src_exists(monkeypatch, tmp_path):
     repo_root = tmp_path / "repo"
@@ -60,7 +56,8 @@ def test_collect_file_creates_parent_dirs(monkeypatch, tmp_path):
 # collect_dir
 # ---------------------------------------------------------------------------
 
-def test_collect_dir_exists_with_sh_files(monkeypatch, tmp_path, capsys):
+
+def test_collect_dir_exists_with_sh_files(monkeypatch, tmp_path):
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     monkeypatch.setattr(collect, "REPO_ROOT", repo_root)

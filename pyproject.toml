@@ -1,20 +1,50 @@
 [project]
 name = "dotfiles"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = []
 
 [project.scripts]
 collect   = "scripts.collect:main"
 bootstrap = "scripts.bootstrap:main"
+setup-dev = "scripts.dev:main"
 
 [dependency-groups]
 dev = [
-    "pytest>=8",
+    "pre-commit>=4.5",
+    "pytest>=9",
+    "ruff>=0.15",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D",        # docstrings — intentionally excluded
+    "ANN",      # type annotations — small scripts, not a library
+    "T201",     # print() — CLIs need print
+    "S101",     # assert — tests need assert
+    "S603",     # subprocess with known commands — trusted
+    "S607",     # partial executable path — trusted (git, python3, uv)
+    "S108",     # /tmp usage — intentional for autojump install
+    "FBT001",   # boolean positional arg — fine for internal functions
+    "FBT002",   # boolean default arg — fine for internal functions
+    "COM812",   # trailing comma — conflicts with ruff formatter
+    "N806",     # uppercase var in function — SEP is a local constant
+    "PLR2004",  # magic values — literal counts in tests are readable
+    "C901",     # complexity — handle_file refactor comes later
+    "PLR0911",  # too many returns — handle_file, refactor later
+    "PLR0912",  # too many branches — handle_file, refactor later
+    "PLR0913",  # too many arguments — handle_file, refactor later
+    "TC003",    # TYPE_CHECKING imports — overkill for scripts
+    "TRY300",   # return-in-try style — current form is clearer
+]
 
 [build-system]
 requires = ["hatchling"]

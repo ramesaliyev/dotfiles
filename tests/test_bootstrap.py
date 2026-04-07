@@ -5,23 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
-
-import scripts.bootstrap as bootstrap
+from scripts import bootstrap
 from scripts.common import checksum
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_state(entries=None):
     return {"version": 1, "entries": entries or {}}
-
-
-def _repo_rel(repo_root: Path, name: str) -> str:
-    """Return a repo-relative path string for a file placed in repo_root."""
-    return name
 
 
 def _setup_repo_file(repo_root: Path, rel: str, content: bytes = b"content") -> Path:
@@ -39,6 +32,7 @@ def _run(monkeypatch, repo_root, repo_rel, dest, state, *, force=False, dry_run=
 # ---------------------------------------------------------------------------
 # handle_file — destination does not exist
 # ---------------------------------------------------------------------------
+
 
 def test_handle_file_dest_missing(monkeypatch, tmp_path):
     repo_root = tmp_path / "repo"
@@ -70,6 +64,7 @@ def test_handle_file_dest_missing_dry_run(monkeypatch, tmp_path):
 # handle_file — repo file missing
 # ---------------------------------------------------------------------------
 
+
 def test_handle_file_repo_missing(monkeypatch, tmp_path):
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -84,6 +79,7 @@ def test_handle_file_repo_missing(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 # handle_file — dest exists, no state entry
 # ---------------------------------------------------------------------------
+
 
 def test_handle_file_untracked_same_content(monkeypatch, tmp_path):
     repo_root = tmp_path / "repo"
@@ -144,7 +140,8 @@ def test_handle_file_untracked_diff_content_user_no(monkeypatch, tmp_path):
 # handle_file — dest exists, state entry present
 # ---------------------------------------------------------------------------
 
-def _make_entry(repo_root: Path, dest: Path, rel: str) -> dict:
+
+def _make_entry(repo_root: Path, rel: str) -> dict:
     """Build a state entry where repo and dest are in sync."""
     cs = checksum(repo_root / rel)
     return {
@@ -160,7 +157,7 @@ def test_handle_file_nothing_changed(monkeypatch, tmp_path):
     _setup_repo_file(repo_root, "foo.conf", b"v1")
     dest = tmp_path / "foo.conf"
     dest.write_bytes(b"v1")
-    entry = _make_entry(repo_root, dest, "foo.conf")
+    entry = _make_entry(repo_root, "foo.conf")
     state = _make_state({str(dest): entry})
 
     result = _run(monkeypatch, repo_root, "foo.conf", dest, state)
@@ -178,14 +175,16 @@ def test_handle_file_only_repo_changed(monkeypatch, tmp_path):
 
     # Now update only the repo file
     src.write_bytes(b"v2")
-    state = _make_state({
-        str(dest): {
-            "repo_rel": "foo.conf",
-            "repo_checksum": old_cs,   # recorded v1
-            "dest_checksum": old_cs,   # dest was v1 too
-            "bootstrapped_at": "2024-01-01T00:00:00+00:00",
-        }
-    })
+    state = _make_state(
+        {
+            str(dest): {
+                "repo_rel": "foo.conf",
+                "repo_checksum": old_cs,  # recorded v1
+                "dest_checksum": old_cs,  # dest was v1 too
+                "bootstrapped_at": "2024-01-01T00:00:00+00:00",
+            },
+        },
+    )
 
     result = _run(monkeypatch, repo_root, "foo.conf", dest, state)
 
@@ -202,14 +201,16 @@ def test_handle_file_only_dest_changed(monkeypatch, tmp_path):
 
     # Now modify only dest
     dest.write_bytes(b"local-tweak")
-    state = _make_state({
-        str(dest): {
-            "repo_rel": "foo.conf",
-            "repo_checksum": old_cs,
-            "dest_checksum": old_cs,  # recorded original
-            "bootstrapped_at": "2024-01-01T00:00:00+00:00",
-        }
-    })
+    state = _make_state(
+        {
+            str(dest): {
+                "repo_rel": "foo.conf",
+                "repo_checksum": old_cs,
+                "dest_checksum": old_cs,  # recorded original
+                "bootstrapped_at": "2024-01-01T00:00:00+00:00",
+            },
+        },
+    )
 
     result = _run(monkeypatch, repo_root, "foo.conf", dest, state)
 
@@ -226,14 +227,16 @@ def test_handle_file_both_changed_force(monkeypatch, tmp_path):
 
     src.write_bytes(b"repo-v2")
     dest.write_bytes(b"local-v2")
-    state = _make_state({
-        str(dest): {
-            "repo_rel": "foo.conf",
-            "repo_checksum": old_cs,
-            "dest_checksum": old_cs,
-            "bootstrapped_at": "2024-01-01T00:00:00+00:00",
-        }
-    })
+    state = _make_state(
+        {
+            str(dest): {
+                "repo_rel": "foo.conf",
+                "repo_checksum": old_cs,
+                "dest_checksum": old_cs,
+                "bootstrapped_at": "2024-01-01T00:00:00+00:00",
+            },
+        },
+    )
 
     result = _run(monkeypatch, repo_root, "foo.conf", dest, state, force=True)
 
@@ -251,14 +254,16 @@ def test_handle_file_both_changed_user_yes(monkeypatch, tmp_path):
 
     src.write_bytes(b"repo-v2")
     dest.write_bytes(b"local-v2")
-    state = _make_state({
-        str(dest): {
-            "repo_rel": "foo.conf",
-            "repo_checksum": old_cs,
-            "dest_checksum": old_cs,
-            "bootstrapped_at": "2024-01-01T00:00:00+00:00",
-        }
-    })
+    state = _make_state(
+        {
+            str(dest): {
+                "repo_rel": "foo.conf",
+                "repo_checksum": old_cs,
+                "dest_checksum": old_cs,
+                "bootstrapped_at": "2024-01-01T00:00:00+00:00",
+            },
+        },
+    )
 
     result = _run(monkeypatch, repo_root, "foo.conf", dest, state)
 
@@ -275,14 +280,16 @@ def test_handle_file_both_changed_dry_run(monkeypatch, tmp_path):
 
     src.write_bytes(b"repo-v2")
     dest.write_bytes(b"local-v2")
-    state = _make_state({
-        str(dest): {
-            "repo_rel": "foo.conf",
-            "repo_checksum": old_cs,
-            "dest_checksum": old_cs,
-            "bootstrapped_at": "2024-01-01T00:00:00+00:00",
-        }
-    })
+    state = _make_state(
+        {
+            str(dest): {
+                "repo_rel": "foo.conf",
+                "repo_checksum": old_cs,
+                "dest_checksum": old_cs,
+                "bootstrapped_at": "2024-01-01T00:00:00+00:00",
+            },
+        },
+    )
 
     # dry_run: should not prompt and should not overwrite
     result = _run(monkeypatch, repo_root, "foo.conf", dest, state, dry_run=True)
@@ -294,6 +301,7 @@ def test_handle_file_both_changed_dry_run(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 # print_module_note
 # ---------------------------------------------------------------------------
+
 
 def test_print_module_note_with_note_and_readme(monkeypatch, tmp_path, capsys):
     readme = tmp_path / "dotfiles" / "tmux" / "README.md"

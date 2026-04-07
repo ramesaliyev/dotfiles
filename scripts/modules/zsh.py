@@ -7,7 +7,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from scripts.common import info, warn
+from scripts.common import info
 
 HOME = Path.home()
 
@@ -15,7 +15,8 @@ README_REL = "dotfiles/zsh/README.md"
 
 POST_BOOTSTRAP_NOTE = (
     "No .zshrc committed — it's machine-specific.\n"
-    "Make sure your ~/.zshrc includes full list of plugins.")
+    "Make sure your ~/.zshrc includes full list of plugins."
+)
 
 _ZSH_CUSTOM = Path(os.environ.get("ZSH_CUSTOM", str(HOME / ".oh-my-zsh/custom")))
 
@@ -81,7 +82,12 @@ def run_bootstrap(dry_run: bool = False, verbose: bool = False) -> dict:
     else:
         info("[install] autojump")
         tmp = Path("/tmp/autojump")
-        subprocess.run(["git", "clone", AUTOJUMP_URL, str(tmp)], check=True, stdout=sink, stderr=sink)
+        subprocess.run(
+            ["git", "clone", AUTOJUMP_URL, str(tmp)],
+            check=True,
+            stdout=sink,
+            stderr=sink,
+        )
         subprocess.run(["python3", "install.py"], cwd=tmp, check=True, stdout=sink, stderr=sink)
         counts["installed"] += 1
 
@@ -93,7 +99,7 @@ def check_zshrc() -> list[str]:
     zshrc = HOME / ".zshrc"
     if not zshrc.exists():
         return []
-    lines = [l for l in zshrc.read_text().splitlines() if not l.lstrip().startswith("#")]
+    lines = [ln for ln in zshrc.read_text().splitlines() if not ln.lstrip().startswith("#")]
     text = "\n".join(lines)
     match = re.search(r"plugins=\(([^)]*)\)", text, re.DOTALL)
     if not match:

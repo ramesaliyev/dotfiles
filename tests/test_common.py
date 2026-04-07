@@ -4,17 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
-import pytest
-
-import scripts.common as common
-
+from scripts import common
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _patch_state_file(monkeypatch, tmp_path):
     state_file = tmp_path / "state.json"
@@ -26,6 +23,7 @@ def _patch_state_file(monkeypatch, tmp_path):
 # load_state
 # ---------------------------------------------------------------------------
 
+
 def test_load_state_missing_file(monkeypatch, tmp_path):
     _patch_state_file(monkeypatch, tmp_path)
     state = common.load_state()
@@ -34,7 +32,17 @@ def test_load_state_missing_file(monkeypatch, tmp_path):
 
 def test_load_state_existing_file(monkeypatch, tmp_path):
     state_file = _patch_state_file(monkeypatch, tmp_path)
-    data = {"version": 1, "entries": {"/foo": {"repo_rel": "foo", "repo_checksum": "abc", "dest_checksum": "abc", "bootstrapped_at": "2024-01-01T00:00:00+00:00"}}}
+    data = {
+        "version": 1,
+        "entries": {
+            "/foo": {
+                "repo_rel": "foo",
+                "repo_checksum": "abc",
+                "dest_checksum": "abc",
+                "bootstrapped_at": "2024-01-01T00:00:00+00:00",
+            },
+        },
+    }
     state_file.write_text(json.dumps(data))
     assert common.load_state() == data
 
@@ -42,6 +50,7 @@ def test_load_state_existing_file(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 # save_state
 # ---------------------------------------------------------------------------
+
 
 def test_save_state_creates_parent_dir(monkeypatch, tmp_path):
     state_file = tmp_path / "nested" / "dir" / "state.json"
@@ -69,7 +78,7 @@ def test_save_load_round_trip(monkeypatch, tmp_path):
                 "repo_checksum": "deadbeef",
                 "dest_checksum": "deadbeef",
                 "bootstrapped_at": "2024-06-01T12:00:00+00:00",
-            }
+            },
         },
     }
     common.save_state(original)
@@ -79,6 +88,7 @@ def test_save_load_round_trip(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 # checksum
 # ---------------------------------------------------------------------------
+
 
 def test_checksum_deterministic(tmp_path):
     f = tmp_path / "file.txt"
@@ -106,16 +116,18 @@ def test_checksum_is_sha256(tmp_path):
 # now_iso
 # ---------------------------------------------------------------------------
 
+
 def test_now_iso_is_utc_iso_string():
     result = common.now_iso()
     dt = datetime.fromisoformat(result)
     assert dt.tzinfo is not None
-    assert dt.tzinfo == timezone.utc
+    assert dt.tzinfo == UTC
 
 
 # ---------------------------------------------------------------------------
 # warn / info
 # ---------------------------------------------------------------------------
+
 
 def test_warn_goes_to_stderr_with_prefix(capsys):
     common.warn("something wrong")
@@ -135,6 +147,7 @@ def test_info_goes_to_stdout_with_prefix(capsys):
 # ask_overwrite
 # ---------------------------------------------------------------------------
 
+
 def test_ask_overwrite_enter_returns_true(monkeypatch, tmp_path):
     monkeypatch.setattr("builtins.input", lambda _: "")
     assert common.ask_overwrite(tmp_path / "file") is True
@@ -153,5 +166,6 @@ def test_ask_overwrite_n_returns_false(monkeypatch, tmp_path):
 def test_ask_overwrite_eoferror_returns_false(monkeypatch, tmp_path):
     def raise_eof(_):
         raise EOFError
+
     monkeypatch.setattr("builtins.input", raise_eof)
     assert common.ask_overwrite(tmp_path / "file") is False

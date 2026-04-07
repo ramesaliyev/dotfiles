@@ -26,7 +26,7 @@ def print_module_note(module) -> None:
     note = getattr(module, "POST_BOOTSTRAP_NOTE", None)
     readme_rel = getattr(module, "README_REL", None)
     if note:
-        print(f"\n  Note:\n" + "\n".join(f"    {line}" for line in note.splitlines()))
+        print("\n  Note:\n" + "\n".join(f"    {line}" for line in note.splitlines()))
     if readme_rel:
         readme = REPO_ROOT / readme_rel
         if readme.exists():
@@ -82,7 +82,7 @@ def handle_file(
                     "bootstrapped_at": now_iso(),
                 }
             return "skipped"
-        
+
         # File exists but content differs and we've never managed it — conflict.
         repo_changed = True
         dest_changed = True
@@ -141,9 +141,21 @@ def main() -> None:
 
 def _main() -> None:
     parser = argparse.ArgumentParser(description="Bootstrap this machine from dotfiles repo.")
-    parser.add_argument("--force", action="store_true", help="overwrite all conflicts without prompting")
-    parser.add_argument("--dry-run", action="store_true", help="show what would happen without making changes")
-    parser.add_argument("--verbose", action="store_true", help="show output from subcommands (e.g. git clone)")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite all conflicts without prompting",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show what would happen without making changes",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="show output from subcommands (e.g. git clone)",
+    )
     args = parser.parse_args()
 
     if args.dry_run:
@@ -182,7 +194,7 @@ def _main() -> None:
     print(
         f"  {tmux_counts['copied']} file(s) copied, "
         f"{tmux_counts['skipped']} skipped, "
-        f"{tmux_counts['warned']} warned"
+        f"{tmux_counts['warned']} warned",
     )
     print_module_note(tmux)
 
@@ -190,17 +202,14 @@ def _main() -> None:
     print(SEP)
     print("[zsh]")
     zsh_counts = zsh.run_bootstrap(dry_run=args.dry_run, verbose=args.verbose)
-    print(
-        f"  {zsh_counts['installed']} plugin(s) installed, "
-        f"{zsh_counts['skipped']} skipped"
-    )
+    print(f"  {zsh_counts['installed']} plugin(s) installed, {zsh_counts['skipped']} skipped")
     missing = zsh.check_zshrc()
     if missing:
         print()
         warn(
             f"Following plugins are missing from ~/.zshrc plugins=():\n"
             f"    ({' '.join(missing)})\n"
-            f"    Add them and run: source ~/.zshrc"
+            f"    Add them and run: source ~/.zshrc",
         )
     print_module_note(zsh)
 
@@ -209,9 +218,7 @@ def _main() -> None:
 
     print(SEP)
     print(
-        f"✓ Done — {total['copied']} copied, "
-        f"{total['skipped']} skipped, "
-        f"{total['warned']} warned"
+        f"✓ Done — {total['copied']} copied, {total['skipped']} skipped, {total['warned']} warned",
     )
 
     if total["warned"] and not args.force:

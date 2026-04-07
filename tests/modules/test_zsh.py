@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import call, patch
-
-import pytest
+from unittest.mock import patch
 
 import scripts.modules.zsh as zsh_module
-
 
 # ---------------------------------------------------------------------------
 # PLUGINS constant
 # ---------------------------------------------------------------------------
+
 
 def test_plugins_list_length():
     assert len(zsh_module.PLUGINS) == 3
@@ -35,6 +33,7 @@ def test_plugins_urls_are_github():
 # EXPECTED_PLUGINS constant
 # ---------------------------------------------------------------------------
 
+
 def test_expected_plugins_is_set_of_strings():
     assert isinstance(zsh_module.EXPECTED_PLUGINS, set)
     for p in zsh_module.EXPECTED_PLUGINS:
@@ -45,12 +44,10 @@ def test_expected_plugins_is_set_of_strings():
 # run_bootstrap — dry_run
 # ---------------------------------------------------------------------------
 
+
 def test_run_bootstrap_dry_run_no_clones(tmp_path, monkeypatch):
     # Point all plugin dest dirs to non-existent paths under tmp_path
-    fake_plugins = [
-        (name, url, tmp_path / "plugins" / name)
-        for name, url, _ in zsh_module.PLUGINS
-    ]
+    fake_plugins = [(name, url, tmp_path / "plugins" / name) for name, url, _ in zsh_module.PLUGINS]
     monkeypatch.setattr(zsh_module, "PLUGINS", fake_plugins)
     monkeypatch.setattr(zsh_module, "AUTOJUMP_DEST", tmp_path / "autojump")
 
@@ -65,6 +62,7 @@ def test_run_bootstrap_dry_run_no_clones(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # run_bootstrap — all plugins already exist
 # ---------------------------------------------------------------------------
+
 
 def test_run_bootstrap_all_exist_skip_all(tmp_path, monkeypatch):
     fake_plugins = []
@@ -89,11 +87,9 @@ def test_run_bootstrap_all_exist_skip_all(tmp_path, monkeypatch):
 # run_bootstrap — none exist, real install
 # ---------------------------------------------------------------------------
 
+
 def test_run_bootstrap_none_exist_calls_clone(tmp_path, monkeypatch):
-    fake_plugins = [
-        (name, url, tmp_path / "plugins" / name)
-        for name, url, _ in zsh_module.PLUGINS
-    ]
+    fake_plugins = [(name, url, tmp_path / "plugins" / name) for name, url, _ in zsh_module.PLUGINS]
     monkeypatch.setattr(zsh_module, "PLUGINS", fake_plugins)
     monkeypatch.setattr(zsh_module, "AUTOJUMP_DEST", tmp_path / "autojump")
     monkeypatch.setattr(zsh_module, "AUTOJUMP_URL", "https://github.com/wting/autojump.git")
@@ -110,6 +106,7 @@ def test_run_bootstrap_none_exist_calls_clone(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # check_zshrc
 # ---------------------------------------------------------------------------
+
 
 def test_check_zshrc_no_file(tmp_path, monkeypatch):
     monkeypatch.setattr(zsh_module, "HOME", tmp_path)
