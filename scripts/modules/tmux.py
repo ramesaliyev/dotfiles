@@ -4,6 +4,15 @@ from pathlib import Path
 
 HOME = Path.home()
 
+README_REL = "dotfiles/tmux/README.md"
+
+POST_BOOTSTRAP_NOTE = (
+    "Plugins are not committed — install them inside tmux:\n"
+    "  1. Start tmux:        tmux\n"
+    "  2. Install plugins:   Ctrl+A then I\n"
+    "  3. Reload config:     Ctrl+A then r"
+)
+
 # (source_on_machine, repo-relative destination path)
 COLLECT_MAPPINGS: list[tuple[Path, str]] = [
     (HOME / ".tmux.conf",                              "dotfiles/tmux/.tmux.conf"),

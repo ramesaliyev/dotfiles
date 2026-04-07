@@ -22,6 +22,17 @@ from scripts.modules import tmux
 REPO_ROOT = Path(__file__).parent.parent
 
 
+def print_module_note(module) -> None:
+    note = getattr(module, "POST_BOOTSTRAP_NOTE", None)
+    readme_rel = getattr(module, "README_REL", None)
+    if note:
+        print(f"\n  Note:\n" + "\n".join(f"    {line}" for line in note.splitlines()))
+    if readme_rel:
+        readme = REPO_ROOT / readme_rel
+        if readme.exists():
+            print(f"  See: {readme_rel}")
+
+
 def handle_file(
     repo_rel: str,
     dest: Path,
@@ -142,6 +153,8 @@ def main() -> None:
                 dry_run=args.dry_run,
             )
             counts[result] += 1
+
+    print_module_note(tmux)
 
     if not args.dry_run:
         save_state(state)
