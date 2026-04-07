@@ -1,0 +1,14 @@
+files:
+  - machine: ~/.tmux.conf
+    repo: dotfiles/tmux/.tmux.conf
+  - machine: ~/.config/tmux-powerline/config.sh
+    repo: dotfiles/tmux/tmux-powerline/config.sh
+  - machine: ~/.config/tmux-powerline/themes/default.sh
+    repo: dotfiles/tmux/tmux-powerline/themes/default.sh
+
+readme: dotfiles/tmux/README.md
+
+post_bootstrap_note: |
+  Plugins not committed — must be set up manually.
+    Updating?       Ctrl+A R to reload config, then Ctrl+A I if there are new plugins.
+    Fresh install?  See dotfiles/tmux/README.md
