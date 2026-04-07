@@ -72,7 +72,18 @@ def handle_file(
     current_dest_cs = checksum(dest)
 
     if entry is None:
-        # File exists but we've never managed it — treat as a conflict.
+        if current_repo_cs == current_dest_cs:
+            # Files already match — silently adopt under management.
+            if not dry_run:
+                state["entries"][dest_key] = {
+                    "repo_rel": repo_rel,
+                    "repo_checksum": current_repo_cs,
+                    "dest_checksum": current_repo_cs,
+                    "bootstrapped_at": now_iso(),
+                }
+            return "skipped"
+        
+        # File exists but content differs and we've never managed it — conflict.
         repo_changed = True
         dest_changed = True
     else:
@@ -121,9 +132,18 @@ def handle_file(
 
 
 def main() -> None:
+    try:
+        _main()
+    except KeyboardInterrupt:
+        print("\nAborted.", file=sys.stderr)
+        sys.exit(1)
+
+
+def _main() -> None:
     parser = argparse.ArgumentParser(description="Bootstrap this machine from dotfiles repo.")
     parser.add_argument("--force", action="store_true", help="overwrite all conflicts without prompting")
     parser.add_argument("--dry-run", action="store_true", help="show what would happen without making changes")
+    parser.add_argument("--verbose", action="store_true", help="show output from subcommands (e.g. git clone)")
     args = parser.parse_args()
 
     if args.dry_run:
@@ -132,13 +152,17 @@ def main() -> None:
         print("→ Bootstrapping from repo")
 
     state = load_state()
-    counts = {"copied": 0, "skipped": 0, "warned": 0}
+    total = {"copied": 0, "skipped": 0, "warned": 0}
+    SEP = "\n" + "─" * 48
 
     # tmux
-    print("\n[tmux]")
+    print(SEP)
+    print("[tmux]")
+    tmux_counts = {"copied": 0, "skipped": 0, "warned": 0}
     for repo_rel, dest in tmux.BOOTSTRAP_MAPPINGS:
         result = handle_file(repo_rel, dest, state, force=args.force, dry_run=args.dry_run)
-        counts[result] += 1
+        tmux_counts[result] += 1
+        total[result] += 1
 
     # tmux themes
     themes_src = REPO_ROOT / tmux.BOOTSTRAP_THEMES_SRC_REL
@@ -152,35 +176,45 @@ def main() -> None:
                 force=args.force,
                 dry_run=args.dry_run,
             )
-            counts[result] += 1
+            tmux_counts[result] += 1
+            total[result] += 1
 
+    print(
+        f"  {tmux_counts['copied']} file(s) copied, "
+        f"{tmux_counts['skipped']} skipped, "
+        f"{tmux_counts['warned']} warned"
+    )
     print_module_note(tmux)
 
     # zsh
-    print("\n[zsh]")
-    zsh_counts = zsh.run_bootstrap(dry_run=args.dry_run)
+    print(SEP)
+    print("[zsh]")
+    zsh_counts = zsh.run_bootstrap(dry_run=args.dry_run, verbose=args.verbose)
     print(
         f"  {zsh_counts['installed']} plugin(s) installed, "
         f"{zsh_counts['skipped']} skipped"
     )
     missing = zsh.check_zshrc()
     if missing:
+        print()
         warn(
-            "plugins missing from ~/.zshrc plugins=() — add them and run: source ~/.zshrc\n"
-            + "".join(f"    - {p}\n" for p in missing).rstrip()
+            f"Following plugins are missing from ~/.zshrc plugins=():\n"
+            f"    ({' '.join(missing)})\n"
+            f"    Add them and run: source ~/.zshrc"
         )
     print_module_note(zsh)
 
     if not args.dry_run:
         save_state(state)
 
+    print(SEP)
     print(
-        f"\n✓ Done — {counts['copied']} copied, "
-        f"{counts['skipped']} skipped, "
-        f"{counts['warned']} warned"
+        f"✓ Done — {total['copied']} copied, "
+        f"{total['skipped']} skipped, "
+        f"{total['warned']} warned"
     )
 
-    if counts["warned"] and not args.force:
+    if total["warned"] and not args.force:
         print("  Run with --force to overwrite conflicts automatically.")
 
 

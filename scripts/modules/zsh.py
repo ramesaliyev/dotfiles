@@ -15,10 +15,7 @@ README_REL = "dotfiles/zsh/README.md"
 
 POST_BOOTSTRAP_NOTE = (
     "No .zshrc committed — it's machine-specific.\n"
-    "  Make sure your ~/.zshrc includes:\n"
-    "    plugins=(git copypath autojump you-should-use zsh-autosuggestions zsh-syntax-highlighting)\n"
-    "  Then run: source ~/.zshrc"
-)
+    "Make sure your ~/.zshrc includes full list of plugins.")
 
 _ZSH_CUSTOM = Path(os.environ.get("ZSH_CUSTOM", str(HOME / ".oh-my-zsh/custom")))
 
@@ -55,34 +52,37 @@ EXPECTED_PLUGINS = {
 BOOTSTRAP_MAPPINGS: list = []  # No config files to copy — .zshrc is machine-specific
 
 
-def run_bootstrap(dry_run: bool = False) -> dict:
+def run_bootstrap(dry_run: bool = False, verbose: bool = False) -> dict:
     """Install missing oh-my-zsh plugins. Returns {"installed": N, "skipped": N}."""
     counts = {"installed": 0, "skipped": 0}
+    sink = None if verbose else subprocess.DEVNULL
 
     for name, url, dest in PLUGINS:
         if dest.exists():
-            info(f"[skip] {name}")
             counts["skipped"] += 1
+            if verbose:
+                info(f"[skip] {name}")
         elif dry_run:
             info(f"[dry-run] would install {name}")
             counts["installed"] += 1
         else:
             info(f"[install] {name}")
-            subprocess.run(["git", "clone", url, str(dest)], check=True)
+            subprocess.run(["git", "clone", url, str(dest)], check=True, stdout=sink, stderr=sink)
             counts["installed"] += 1
 
     # autojump uses its own install.py rather than a simple clone
     if AUTOJUMP_DEST.exists():
-        info("[skip] autojump")
         counts["skipped"] += 1
+        if verbose:
+            info("[skip] autojump")
     elif dry_run:
         info("[dry-run] would install autojump")
         counts["installed"] += 1
     else:
         info("[install] autojump")
         tmp = Path("/tmp/autojump")
-        subprocess.run(["git", "clone", AUTOJUMP_URL, str(tmp)], check=True)
-        subprocess.run(["python3", "install.py"], cwd=tmp, check=True)
+        subprocess.run(["git", "clone", AUTOJUMP_URL, str(tmp)], check=True, stdout=sink, stderr=sink)
+        subprocess.run(["python3", "install.py"], cwd=tmp, check=True, stdout=sink, stderr=sink)
         counts["installed"] += 1
 
     return counts
@@ -93,7 +93,8 @@ def check_zshrc() -> list[str]:
     zshrc = HOME / ".zshrc"
     if not zshrc.exists():
         return []
-    text = zshrc.read_text()
+    lines = [l for l in zshrc.read_text().splitlines() if not l.lstrip().startswith("#")]
+    text = "\n".join(lines)
     match = re.search(r"plugins=\(([^)]*)\)", text, re.DOTALL)
     if not match:
         return sorted(EXPECTED_PLUGINS)

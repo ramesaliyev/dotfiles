@@ -62,5 +62,5 @@ def ask_overwrite(dest: Path) -> bool:
     try:
         answer = input(f"  ? {dest} already exists. Overwrite? [Y/n] ").strip().lower()
         return answer != "n"
-    except (EOFError, KeyboardInterrupt):
+    except EOFError:
         return False
