@@ -16,10 +16,11 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 tmux
 ```
 
-**3. Source the config** (inside tmux) — on first install the active prefix is tmux's default `Ctrl+B`, since our custom `Ctrl+A` isn't loaded yet. If you previously had a custom prefix configured, use that instead:
+**3. Source the config** (inside tmux):
 ```
-Ctrl+B  then  :source-file ~/.tmux.conf
+<prefix>  then  :source-file ~/.tmux.conf
 ```
+> What prefix to use depends on whether a tmux server was already running before step 2. If it wasn't, tmux started fresh and loaded our config — prefix is already `Ctrl+A`. If it was, the old config is still active — use whatever prefix was set then (likely `Ctrl+B`, the tmux default). If you're unsure, try `Ctrl+A` first, then `Ctrl+B`.
 
 **4. Install plugins:**
 ```
