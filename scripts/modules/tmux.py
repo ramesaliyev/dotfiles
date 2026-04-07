@@ -7,11 +7,9 @@ HOME = Path.home()
 README_REL = "dotfiles/tmux/README.md"
 
 POST_BOOTSTRAP_NOTE = (
-    "Plugins are managed by TPM (not committed to this repo).\n"
-    "  • Fresh machine?  Install TPM first, then Ctrl+A I to install plugins.\n"
-    "  • New plugins?    Ctrl+A I inside tmux.\n"
-    "  • Config changed? Ctrl+A r to reload.\n"
-    "  See dotfiles/tmux/README.md for full instructions."
+    "Plugins not committed — must be set up manually.\n"
+    "  Updating?         Ctrl+A r to reload config, then Ctrl+A I if there are new plugins.\n"
+    "  Fresh install?    See dotfiles/tmux/README.md"
 )
 
 # (source_on_machine, repo-relative destination path)

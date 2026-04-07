@@ -1,17 +1,15 @@
 # tmux
 
-Config (`~/.tmux.conf`) is bootstrapped automatically. tmux reads it on startup, but if a session is already running you need to reload it manually (see below).
+Config (`~/.tmux.conf`) is bootstrapped automatically. Plugins are managed by [TPM](https://github.com/tmux-plugins/tpm) and are not committed to this repo.
 
-Plugins are managed by [TPM](https://github.com/tmux-plugins/tpm) and must be set up manually — TPM itself is not committed to this repo.
-
-## Fresh setup (first time on a new machine)
+## New machine
 
 **1. Install TPM:**
 ```bash
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 ```
 
-**2. Start tmux:**
+**2. Start a new tmux session** — config loads automatically:
 ```bash
 tmux
 ```
@@ -21,23 +19,19 @@ tmux
 Ctrl+A  then  I
 ```
 
-**4. Reload config** (inside tmux):
+TPM reloads config after installing. Sessions will auto-save every 10 minutes once plugins are in place.
+
+## Updating an existing machine
+
+Running tmux sessions doesn't pick up config changes on disk automatically. Reload it manually from any session:
+
 ```
 Ctrl+A  then  r
 ```
 
-Sessions auto-save every 10 minutes via tmux-resurrect/continuum once plugins are installed.
+> If plugins aren't installed yet (e.g. right after bootstrap), use `Ctrl+A :source-file ~/.tmux.conf` instead — `r` is a shortcut provided by tmux-sensible.
 
-## Already running tmux (config updated)
-
-Reload config inside tmux:
-```
-Ctrl+A  then  r
-```
-
-## New plugins added to `.tmux.conf`
-
-Install them inside tmux:
+If new plugins were added, install them:
 ```
 Ctrl+A  then  I
 ```
