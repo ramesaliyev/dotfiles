@@ -1,100 +1,120 @@
-"""Tests for scripts/modules/tmux.py — mapping structure and consistency."""
+"""Tests for src/modules/tmux — config and module behavior."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from scripts.modules import tmux
+import yaml
 
 HOME = Path.home()
+CONFIG_PATH = Path(__file__).parent.parent.parent / "src" / "modules" / "tmux" / "config.yaml"
+
+
+def _cfg():
+    with CONFIG_PATH.open() as f:
+        return yaml.safe_load(f)
 
 
 # ---------------------------------------------------------------------------
-# COLLECT_MAPPINGS
+# config.yaml structure
 # ---------------------------------------------------------------------------
 
 
-def test_collect_mappings_has_two_entries():
-    assert len(tmux.COLLECT_MAPPINGS) == 2
+def test_config_has_files_list():
+    assert isinstance(_cfg()["files"], list)
+    assert len(_cfg()["files"]) >= 1
 
 
-def test_collect_mappings_structure():
-    for entry in tmux.COLLECT_MAPPINGS:
-        src, dest_rel = entry
-        assert isinstance(src, Path)
-        assert isinstance(dest_rel, str)
+def test_each_file_entry_has_machine_and_repo():
+    for entry in _cfg()["files"]:
+        assert "machine" in entry
+        assert "repo" in entry
+        assert isinstance(entry["machine"], str)
+        assert isinstance(entry["repo"], str)
 
 
-def test_collect_mappings_sources_under_home():
-    for src, _ in tmux.COLLECT_MAPPINGS:
-        assert str(src).startswith(str(HOME))
+def test_machine_paths_start_with_tilde():
+    for entry in _cfg()["files"]:
+        assert entry["machine"].startswith("~")
 
 
-# ---------------------------------------------------------------------------
-# BOOTSTRAP_MAPPINGS
-# ---------------------------------------------------------------------------
+def test_machine_paths_expand_to_home():
+    for entry in _cfg()["files"]:
+        expanded = Path(entry["machine"]).expanduser()
+        assert str(expanded).startswith(str(HOME))
 
 
-def test_bootstrap_mappings_has_two_entries():
-    assert len(tmux.BOOTSTRAP_MAPPINGS) == 2
+def test_repo_paths_are_relative():
+    for entry in _cfg()["files"]:
+        assert not entry["repo"].startswith("/")
 
 
-def test_bootstrap_mappings_structure():
-    for entry in tmux.BOOTSTRAP_MAPPINGS:
-        repo_rel, dest = entry
-        assert isinstance(repo_rel, str)
-        assert isinstance(dest, Path)
+def test_config_has_readme():
+    assert isinstance(_cfg().get("readme"), str)
 
 
-def test_bootstrap_mappings_dests_under_home():
-    for _, dest in tmux.BOOTSTRAP_MAPPINGS:
-        assert str(dest).startswith(str(HOME))
-
-
-# ---------------------------------------------------------------------------
-# Symmetry: collect ↔ bootstrap are inverses
-# ---------------------------------------------------------------------------
-
-
-def test_collect_bootstrap_are_inverses():
-    collect_pairs = {(str(src), dest_rel) for src, dest_rel in tmux.COLLECT_MAPPINGS}
-    bootstrap_pairs = {(dest_rel, str(dest)) for dest_rel, dest in tmux.BOOTSTRAP_MAPPINGS}
-    # Each collect (machine_path → repo_rel) should have a matching
-    # bootstrap (repo_rel → machine_path)
-    for machine_path, repo_rel in collect_pairs:
-        assert (repo_rel, machine_path) in bootstrap_pairs
+def test_config_has_post_bootstrap_note():
+    assert isinstance(_cfg().get("post_bootstrap_note"), str)
+    assert len(_cfg()["post_bootstrap_note"]) > 0
 
 
 # ---------------------------------------------------------------------------
-# Theme directories
+# Symmetry: machine↔repo are inverse mappings
 # ---------------------------------------------------------------------------
 
 
-def test_collect_themes_src_under_home():
-    assert str(tmux.COLLECT_THEMES_SRC).startswith(str(HOME))
-
-
-def test_bootstrap_themes_dest_under_home():
-    assert str(tmux.BOOTSTRAP_THEMES_DEST).startswith(str(HOME))
-
-
-def test_bootstrap_themes_src_rel_is_string():
-    assert isinstance(tmux.BOOTSTRAP_THEMES_SRC_REL, str)
-
-
-def test_collect_themes_dest_rel_is_string():
-    assert isinstance(tmux.COLLECT_THEMES_DEST_REL, str)
+def test_all_machine_repo_pairs_unique():
+    files = _cfg()["files"]
+    machines = [e["machine"] for e in files]
+    repos = [e["repo"] for e in files]
+    assert len(machines) == len(set(machines)), "duplicate machine paths"
+    assert len(repos) == len(set(repos)), "duplicate repo paths"
 
 
 # ---------------------------------------------------------------------------
-# Metadata constants
+# TmuxModule bootstrap/collect yield correct event types
 # ---------------------------------------------------------------------------
 
 
-def test_post_bootstrap_note_is_non_empty_string():
-    assert isinstance(tmux.POST_BOOTSTRAP_NOTE, str)
-    assert len(tmux.POST_BOOTSTRAP_NOTE) > 0
+def test_bootstrap_yields_module_start_and_end(monkeypatch, tmp_path):
+    from argparse import Namespace
+
+    from src.modules.tmux.module import TmuxModule
+    from src.ui.events import ModuleEnd, ModuleStart
+
+    # Create dummy repo files so sync_file doesn't warn
+    cfg = _cfg()
+    for entry in cfg["files"]:
+        repo_file = tmp_path / entry["repo"]
+        repo_file.parent.mkdir(parents=True, exist_ok=True)
+        repo_file.write_bytes(b"content")
+
+    import src.modules.tmux.module as tmux_mod
+
+    monkeypatch.setattr(tmux_mod, "REPO_ROOT", tmp_path)
+
+    args = Namespace(force=False, dry_run=True, verbose=False)
+    state = {"version": 1, "entries": {}}
+    events = list(TmuxModule().bootstrap(args, state))
+
+    assert isinstance(events[0], ModuleStart)
+    assert events[0].name == "tmux"
+    assert isinstance(events[-1], ModuleEnd)
+    assert events[-1].name == "tmux"
 
 
-def test_readme_rel_is_string():
-    assert isinstance(tmux.README_REL, str)
+def test_collect_yields_module_start_and_end(monkeypatch, tmp_path):
+    from argparse import Namespace
+
+    import src.modules.tmux.module as tmux_mod
+    from src.modules.tmux.module import TmuxModule
+    from src.ui.events import ModuleEnd, ModuleStart
+
+    monkeypatch.setattr(tmux_mod, "REPO_ROOT", tmp_path)
+
+    args = Namespace(force=False, dry_run=True, verbose=False)
+    state = {"version": 1, "entries": {}}
+    events = list(TmuxModule().collect(args, state))
+
+    assert isinstance(events[0], ModuleStart)
+    assert isinstance(events[-1], ModuleEnd)
