@@ -31,7 +31,7 @@ from src.core.prompt import ask_overwrite
 from src.core.time import now_iso
 
 if TYPE_CHECKING:
-    from src.core.state import State
+    from src.core.state import Entry, State
 
 
 def sync_file(
@@ -48,7 +48,7 @@ def sync_file(
         return
 
     current_src_cs = checksum(src)
-    new_entry = {
+    new_entry: Entry = {
         "src_rel": str(src),
         "src_checksum": current_src_cs,
         "dest_checksum": current_src_cs,
