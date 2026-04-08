@@ -61,6 +61,17 @@ def test_save_state_writes_json_with_trailing_newline(monkeypatch, tmp_path):
     assert json.loads(raw) == state
 
 
+def test_load_state_corrupt_json_raises(monkeypatch, tmp_path):
+    path = _patch(monkeypatch, tmp_path)
+    path.write_text("not valid json {{{")
+    import json
+
+    import pytest
+
+    with pytest.raises(json.JSONDecodeError):
+        state_mod.load_state()
+
+
 def test_save_load_round_trip(monkeypatch, tmp_path):
     _patch(monkeypatch, tmp_path)
     original = {

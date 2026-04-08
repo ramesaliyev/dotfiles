@@ -10,6 +10,7 @@ import yaml
 from src.core.events import Warning
 
 REPO_ROOT = Path(__file__).parent.parent.parent
+HOME = Path.home()
 
 
 def load_module_config(module_file: str | Path) -> Iterator[Warning]:
@@ -47,5 +48,7 @@ def _expand_str(s: str, warnings: list[str]) -> str:
             return m.group(0)
         return val
 
+    # Only match uppercase names (POSIX convention for env vars); lowercase
+    # identifiers are left as literals rather than treated as variables.
     expanded = re.sub(r"\$([A-Z_][A-Z0-9_]*)", replacer, s)
     return str(Path(expanded).expanduser())

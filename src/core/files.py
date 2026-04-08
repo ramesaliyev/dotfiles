@@ -76,6 +76,8 @@ def sync_file(
         return
 
     if entry is None:
+        # No prior sync record — we can't tell who changed what, so treat
+        # both sides as changed to route into conflict-resolution below.
         src_changed = True
         dest_changed = True
     else:

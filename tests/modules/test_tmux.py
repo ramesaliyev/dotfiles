@@ -6,8 +6,9 @@ from pathlib import Path
 
 import yaml
 
-HOME = Path.home()
-CONFIG_PATH = Path(__file__).parent.parent.parent / "src" / "modules" / "tmux" / "config.yaml"
+from src.core.paths import HOME, REPO_ROOT
+
+CONFIG_PATH = REPO_ROOT / "src" / "modules" / "tmux" / "config.yaml"
 
 
 def _cfg():

@@ -6,7 +6,9 @@ from pathlib import Path
 
 import yaml
 
-CONFIG_PATH = Path(__file__).parent.parent.parent / "src" / "modules" / "zsh" / "config.yaml"
+from src.core.paths import REPO_ROOT
+
+CONFIG_PATH = REPO_ROOT / "src" / "modules" / "zsh" / "config.yaml"
 
 
 def _cfg():
@@ -112,6 +114,13 @@ def test_check_zshrc_no_plugins_declaration(tmp_path):
     assert zsh_mod.check_zshrc(names, zshrc) == sorted(names)
 
 
+def test_check_zshrc_multiline_plugins(tmp_path):
+    zshrc = tmp_path / ".zshrc"
+    zshrc.write_text("plugins=(\n  git\n  copypath\n)\n")
+    missing = zsh_mod.check_zshrc(["git", "copypath", "autojump"], zshrc)
+    assert missing == ["autojump"]
+
+
 def test_check_zshrc_skips_commented_lines(tmp_path):
     zshrc = tmp_path / ".zshrc"
     zshrc.write_text("# plugins=(git autojump)\nplugins=(git)\n")
@@ -140,17 +149,13 @@ def test_bootstrap_dry_run_no_subprocess(tmp_path, monkeypatch):
     all_plugins = "git copypath zsh-autosuggestions zsh-syntax-highlighting you-should-use autojump"
     (tmp_path / ".zshrc").write_text(f"plugins=({all_plugins})\n")
 
-    from src.core.events import SubprocessRun
+    from src.core.events import ModuleEnd, ModuleStart
     from src.modules.zsh.module import ZshModule
 
     events = list(ZshModule().bootstrap())
 
-    # Subprocess events are yielded but renderer skips them on dry_run;
-    # module itself no longer filters them out
-    _ = events  # just check it runs without error
-    assert any(isinstance(e, SubprocessRun) for e in events) or not any(
-        isinstance(e, SubprocessRun) for e in events
-    )  # either way is fine — renderer decides
+    assert any(isinstance(e, ModuleStart) for e in events)
+    assert any(isinstance(e, ModuleEnd) for e in events)
 
 
 def test_bootstrap_yields_copy_done_for_new_plugins(tmp_path, monkeypatch):

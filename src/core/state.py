@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import TypedDict
 
-STATE_FILE = Path.home() / ".dotfiles" / "state.json"
+from .paths import HOME
+
+STATE_FILE = HOME / ".dotfiles" / "state.json"
 STATE_VERSION = 1
 
 

@@ -18,14 +18,23 @@ from src.core.paths import load_module_config
 
 
 def check_zshrc(plugin_names: list[str], zshrc: Path) -> list[str]:
-    """Return plugin names missing from zshrc plugins=()."""
+    """Return plugin names missing from zshrc plugins=().
+
+    Strip comment lines first so a commented-out plugins=(...) block doesn't
+    produce false matches. re.DOTALL lets the regex span a multi-line block.
+    .split() with no args handles any mix of spaces and newlines between names.
+    """
     if not zshrc.exists():
         return []
+    # Drop comment lines so `# plugins=(...)` is ignored by the regex below.
     lines = [ln for ln in zshrc.read_text().splitlines() if not ln.lstrip().startswith("#")]
     text = "\n".join(lines)
+    # Capture everything inside plugins=(...); re.DOTALL allows the block to
+    # span multiple lines.
     match = re.search(r"plugins=\(([^)]*)\)", text, re.DOTALL)
     if not match:
         return sorted(plugin_names)
+    # split() without args tokenises on any whitespace and skips empty strings.
     active = set(match.group(1).split())
     return sorted(set(plugin_names) - active)
 
@@ -59,7 +68,7 @@ class ZshModule:
         for plugin in plugins:
             match plugin["type"]:
                 case "builtin":
-                    continue
+                    continue  # oh-my-zsh ships builtins; nothing to install
 
                 case "gitrepo" | "custom":
                     name = plugin["name"]

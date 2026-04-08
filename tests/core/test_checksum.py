@@ -30,6 +30,12 @@ def test_checksum_is_sha256(tmp_path):
     assert checksum(f) == hashlib.sha256(content).hexdigest()
 
 
+def test_checksum_empty_file(tmp_path):
+    f = tmp_path / "empty.txt"
+    f.write_bytes(b"")
+    assert checksum(f) == hashlib.sha256(b"").hexdigest()
+
+
 def test_now_iso_is_utc_iso_string():
     result = now_iso()
     dt = datetime.fromisoformat(result)

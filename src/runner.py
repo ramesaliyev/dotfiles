@@ -30,18 +30,18 @@ from src.core.events import (
     Warning,
 )
 from src.core.files import sync_file
+from src.core.paths import HOME, REPO_ROOT
 
 if TYPE_CHECKING:
     from src.core.state import State
 
 SEP = "─" * 52
-REPO_ROOT = Path(__file__).parent.parent
 
 
 def _short(path: Path) -> str:
     """Replace home dir with ~ for display."""
     try:
-        return "~/" + str(path.relative_to(Path.home()))
+        return "~/" + str(path.relative_to(HOME))
     except ValueError:
         try:
             return str(path.relative_to(REPO_ROOT))
@@ -55,7 +55,12 @@ def _display(
     prefix: str,
     verbose: bool,
 ) -> None:
-    """Print and count a display event (FileCopied, FileSkipped, etc.)."""
+    """Print and count a display event (FileCopied, FileSkipped, etc.).
+
+    Write events (FileCopied, CopyDone) always print — the user needs to know
+    what changed. Skip events only print under --verbose since no-op is the
+    expected steady-state path and would add noise to normal output.
+    """
     if isinstance(event, FileCopied):
         module_counts["copied"] += 1
         print(f"  {prefix}{event.action} → {_short(event.dest)}")
