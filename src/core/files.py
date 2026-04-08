@@ -48,6 +48,12 @@ def sync_file(
         return
 
     current_src_cs = checksum(src)
+    new_entry = {
+        "src_rel": str(src),
+        "src_checksum": current_src_cs,
+        "dest_checksum": current_src_cs,
+        "synced_at": now_iso(),
+    }
     dest_key = str(dest)
     entry = state["entries"].get(dest_key)
 
@@ -56,12 +62,7 @@ def sync_file(
         if not dry_run:
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dest)
-            state["entries"][dest_key] = {
-                "src_rel": str(src),
-                "src_checksum": current_src_cs,
-                "dest_checksum": current_src_cs,
-                "synced_at": now_iso(),
-            }
+            state["entries"][dest_key] = new_entry
         yield FileCopied(src=src, dest=dest, action="copied")
         return
 
@@ -70,12 +71,7 @@ def sync_file(
     # Case: no entry, same checksum — adopt silently.
     if entry is None and current_src_cs == current_dest_cs:
         if not dry_run:
-            state["entries"][dest_key] = {
-                "src_rel": str(src),
-                "src_checksum": current_src_cs,
-                "dest_checksum": current_src_cs,
-                "synced_at": now_iso(),
-            }
+            state["entries"][dest_key] = new_entry
         yield FileSkipped(dest=dest, reason="unchanged")
         return
 
@@ -95,12 +91,7 @@ def sync_file(
     if src_changed and not dest_changed:
         if not dry_run:
             shutil.copy2(src, dest)
-            state["entries"][dest_key] = {
-                "src_rel": str(src),
-                "src_checksum": current_src_cs,
-                "dest_checksum": current_src_cs,
-                "synced_at": now_iso(),
-            }
+            state["entries"][dest_key] = new_entry
         yield FileCopied(src=src, dest=dest, action="updated")
         return
 
@@ -116,12 +107,7 @@ def sync_file(
     if do_overwrite:
         if not dry_run:
             shutil.copy2(src, dest)
-            state["entries"][dest_key] = {
-                "src_rel": str(src),
-                "src_checksum": current_src_cs,
-                "dest_checksum": current_src_cs,
-                "synced_at": now_iso(),
-            }
+            state["entries"][dest_key] = new_entry
         yield FileCopied(src=src, dest=dest, action="overwritten")
     else:
         yield FileSkipped(dest=dest, reason="kept local")

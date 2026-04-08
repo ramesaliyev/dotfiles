@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from collections import Counter
 from collections.abc import Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -50,7 +51,7 @@ def _short(path: Path) -> str:
 
 def _display(
     event: Event,
-    module_counts: dict[str, int],
+    module_counts: Counter[str],
     prefix: str,
     verbose: bool,
 ) -> None:
@@ -58,24 +59,30 @@ def _display(
     if isinstance(event, FileCopied):
         module_counts["copied"] += 1
         print(f"  {prefix}{event.action} → {_short(event.dest)}")
+
     elif isinstance(event, FileSkipped):
         module_counts["skipped"] += 1
         if verbose:
             print(f"  skipped → {_short(event.dest)}  ({event.reason})")
+
     elif isinstance(event, FileConflict):
         module_counts["warned"] += 1
         print(f"  ! conflict: {_short(event.dest)}", file=sys.stderr)
+
     elif isinstance(event, CopyDone):
         module_counts["copied"] += 1
         print(f"  {prefix}install {event.name}")
+
     elif isinstance(event, CopySkipped):
         module_counts["skipped"] += 1
         if verbose:
             print(f"  skip    {event.name}")
+
     elif isinstance(event, Warning):
         module_counts["warned"] += 1
         for line in event.message.splitlines():
             print(f"  ! {line}", file=sys.stderr)
+
     elif isinstance(event, Info):
         print(f"  {event.message}")
 
@@ -89,8 +96,9 @@ def run(
     verbose: bool = False,
 ) -> dict[str, int]:
     """Consume event stream, execute actions, print formatted output. Returns total counts."""
-    total: dict[str, int] = {"copied": 0, "skipped": 0, "warned": 0}
-    module_counts: dict[str, int] = {"copied": 0, "skipped": 0, "warned": 0}
+
+    total: Counter[str] = Counter()
+    module_counts: Counter[str] = Counter()
     prefix = "[dry-run] " if dry_run else ""
 
     for event in events:
@@ -104,24 +112,26 @@ def run(
                 subprocess.run(event.cmd, cwd=event.cwd, check=True, stdout=sink, stderr=sink)
 
         elif isinstance(event, ModuleStart):
-            module_counts = {"copied": 0, "skipped": 0, "warned": 0}
+            module_counts = Counter()
             print(f"\n{SEP}")
             print(f"[{event.name}]")
 
         elif isinstance(event, ModuleEnd):
             c = module_counts
             print(f"  {c['copied']} copied, {c['skipped']} skipped, {c['warned']} warned")
+
             if event.note:
                 print()
                 for line in event.note.rstrip().splitlines():
                     print(f"  {line}")
+
             if event.readme_rel:
                 readme = REPO_ROOT / event.readme_rel
                 if readme.exists():
                     print(f"  See: {event.readme_rel}")
-            total["copied"] += c["copied"]
-            total["skipped"] += c["skipped"]
-            total["warned"] += c["warned"]
+
+            total += module_counts
+            module_counts = Counter()
 
         else:
             _display(event, module_counts, prefix, verbose)

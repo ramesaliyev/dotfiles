@@ -54,17 +54,17 @@ def _main(command: str) -> None:
         print("  Run with --force to overwrite conflicts automatically.")
 
 
-def bootstrap() -> None:
+def _entry(command: str) -> None:
     try:
-        _main("bootstrap")
+        _main(command)
     except KeyboardInterrupt:
         print("\nAborted.", file=sys.stderr)
         sys.exit(1)
+
+
+def bootstrap() -> None:
+    _entry("bootstrap")
 
 
 def collect() -> None:
-    try:
-        _main("collect")
-    except KeyboardInterrupt:
-        print("\nAborted.", file=sys.stderr)
-        sys.exit(1)
+    _entry("collect")

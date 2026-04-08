@@ -135,7 +135,9 @@ def test_subprocess_run_not_counted(monkeypatch):
 
     monkeypatch.setattr(sp, "run", lambda *_a, **_kw: None)
     counts = _run([ModuleStart("tmux"), SubprocessRun(["echo", "hi"]), _end()])
-    assert counts == {"copied": 0, "skipped": 0, "warned": 0}
+    assert counts["copied"] == 0
+    assert counts["skipped"] == 0
+    assert counts["warned"] == 0
 
 
 # ---------------------------------------------------------------------------
