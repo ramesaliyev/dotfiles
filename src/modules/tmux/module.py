@@ -3,13 +3,14 @@ from __future__ import annotations
 from collections.abc import Iterator
 from pathlib import Path
 
+from src.core.config import load_module_config
 from src.core.events import (
     Event,
     ModuleEnd,
     ModuleStart,
     SyncFile,
 )
-from src.core.paths import REPO_ROOT, load_module_config
+from src.core.paths import REPO_ROOT
 
 
 class TmuxModule:

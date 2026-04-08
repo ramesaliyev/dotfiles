@@ -90,20 +90,20 @@ import src.modules.zsh.module as zsh_mod  # noqa: E402
 
 
 def test_check_zshrc_no_file(tmp_path):
-    assert zsh_mod.check_zshrc(["git", "autojump"], tmp_path / ".zshrc") == []
+    assert zsh_mod._check_zshrc(["git", "autojump"], tmp_path / ".zshrc") == []
 
 
 def test_check_zshrc_all_present(tmp_path):
     names = [p["name"] for p in _cfg()["plugins"]]
     zshrc = tmp_path / ".zshrc"
     zshrc.write_text(f"plugins=({' '.join(names)})\n")
-    assert zsh_mod.check_zshrc(names, zshrc) == []
+    assert zsh_mod._check_zshrc(names, zshrc) == []
 
 
 def test_check_zshrc_missing_some(tmp_path):
     zshrc = tmp_path / ".zshrc"
     zshrc.write_text("plugins=(git copypath)\n")
-    missing = zsh_mod.check_zshrc(["git", "copypath", "autojump", "you-should-use"], zshrc)
+    missing = zsh_mod._check_zshrc(["git", "copypath", "autojump", "you-should-use"], zshrc)
     assert sorted(missing) == ["autojump", "you-should-use"]
 
 
@@ -111,20 +111,20 @@ def test_check_zshrc_no_plugins_declaration(tmp_path):
     zshrc = tmp_path / ".zshrc"
     zshrc.write_text("export ZSH=$HOME/.oh-my-zsh\n")
     names = ["git", "autojump"]
-    assert zsh_mod.check_zshrc(names, zshrc) == sorted(names)
+    assert zsh_mod._check_zshrc(names, zshrc) == sorted(names)
 
 
 def test_check_zshrc_multiline_plugins(tmp_path):
     zshrc = tmp_path / ".zshrc"
     zshrc.write_text("plugins=(\n  git\n  copypath\n)\n")
-    missing = zsh_mod.check_zshrc(["git", "copypath", "autojump"], zshrc)
+    missing = zsh_mod._check_zshrc(["git", "copypath", "autojump"], zshrc)
     assert missing == ["autojump"]
 
 
 def test_check_zshrc_skips_commented_lines(tmp_path):
     zshrc = tmp_path / ".zshrc"
     zshrc.write_text("# plugins=(git autojump)\nplugins=(git)\n")
-    missing = zsh_mod.check_zshrc(["git", "autojump"], zshrc)
+    missing = zsh_mod._check_zshrc(["git", "autojump"], zshrc)
     assert "git" not in missing
     assert "autojump" in missing
 

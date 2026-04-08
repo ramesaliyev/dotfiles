@@ -41,11 +41,11 @@ def test_file_copied_prints_action(tmp_path, capsys):
     assert "copied" in capsys.readouterr().out
 
 
-def test_file_copied_dry_run_shows_prefix(tmp_path, capsys):
+def test_file_copied_dry_run_still_prints(tmp_path, capsys):
     dest = tmp_path / "foo.conf"
     event = FileCopied(src=tmp_path / "src.conf", dest=dest, action="copied")
     _run([ModuleStart("tmux"), event, _end()], dry_run=True)
-    assert "[dry-run]" in capsys.readouterr().out
+    assert "copied" in capsys.readouterr().out
 
 
 # ---------------------------------------------------------------------------
@@ -217,9 +217,9 @@ def test_copy_done_prints_name(capsys):
     assert "zsh-autosuggestions" in capsys.readouterr().out
 
 
-def test_copy_done_dry_run_shows_prefix(capsys):
+def test_copy_done_dry_run_still_prints(capsys):
     _run([ModuleStart("tmux"), CopyDone("zsh-autosuggestions"), _end()], dry_run=True)
-    assert "[dry-run]" in capsys.readouterr().out
+    assert "zsh-autosuggestions" in capsys.readouterr().out
 
 
 def test_copy_skipped_hidden_by_default(capsys):

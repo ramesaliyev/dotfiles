@@ -40,7 +40,6 @@ SEP = "─" * 52
 def _display(
     event: Event,
     module_counts: Counter[str],
-    prefix: str,
     verbose: bool,
 ) -> None:
     """Print and count a display event (FileCopied, FileSkipped, etc.).
@@ -51,7 +50,7 @@ def _display(
     """
     if isinstance(event, FileCopied):
         module_counts["copied"] += 1
-        print(f"  {prefix}{event.action} → {ppath(event.dest)}")
+        print(f"  {event.action} → {ppath(event.dest)}")
 
     elif isinstance(event, FileSkipped):
         module_counts["skipped"] += 1
@@ -64,12 +63,12 @@ def _display(
 
     elif isinstance(event, CopyDone):
         module_counts["copied"] += 1
-        print(f"  {prefix}install {event.name}")
+        print(f"  installed → {event.name}")
 
     elif isinstance(event, CopySkipped):
         module_counts["skipped"] += 1
         if verbose:
-            print(f"  skip    {event.name}")
+            print(f"  skipped → {event.name}")
 
     elif isinstance(event, Warning):
         module_counts["warned"] += 1
@@ -92,12 +91,11 @@ def run(
 
     total: Counter[str] = Counter()
     module_counts: Counter[str] = Counter()
-    prefix = "[dry-run] " if dry_run else ""
 
     for event in events:
         if isinstance(event, SyncFile):
             for sub in sync_file(event.src, event.dest, state, force=force, dry_run=dry_run):
-                _display(sub, module_counts, prefix, verbose)
+                _display(sub, module_counts, verbose)
 
         elif isinstance(event, SubprocessRun):
             if not dry_run:
@@ -127,6 +125,6 @@ def run(
             module_counts = Counter()
 
         else:
-            _display(event, module_counts, prefix, verbose)
+            _display(event, module_counts, verbose)
 
     return total

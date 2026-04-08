@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import re
+import shutil
 from collections.abc import Callable, Iterator
 from pathlib import Path
 
+from src.core.config import load_module_config
 from src.core.events import (
     CopyDone,
     CopySkipped,
@@ -14,10 +16,9 @@ from src.core.events import (
     SubprocessRun,
     Warning,
 )
-from src.core.paths import load_module_config
 
 
-def check_zshrc(plugin_names: list[str], zshrc: Path) -> list[str]:
+def _check_zshrc(plugin_names: list[str], zshrc: Path) -> list[str]:
     """Return plugin names missing from zshrc plugins=().
 
     Strip comment lines first so a commented-out plugins=(...) block doesn't
@@ -40,10 +41,14 @@ def check_zshrc(plugin_names: list[str], zshrc: Path) -> list[str]:
 
 
 def _install_autojump(name: str, url: str) -> Iterator[Event]:
+    if shutil.which("autojump"):
+        yield CopySkipped(name)
+        return
     tmp = Path("/tmp") / name
     yield SubprocessRun(["git", "clone", url, str(tmp)])
     yield SubprocessRun(["python3", "install.py"], cwd=tmp)
     yield SubprocessRun(["rm", "-rf", str(tmp)])
+    yield CopyDone(name)
 
 
 _CUSTOM_INSTALLERS: dict[str, Callable[[str, str], Iterator[Event]]] = {
@@ -70,27 +75,28 @@ class ZshModule:
                 case "builtin":
                     continue  # oh-my-zsh ships builtins; nothing to install
 
-                case "gitrepo" | "custom":
+                case "gitrepo":
                     name = plugin["name"]
                     dest = plugin_dir / name
-
                     if dest.exists():
                         yield CopySkipped(name)
                     else:
-                        match plugin["type"]:
-                            case "gitrepo":
-                                yield SubprocessRun(["git", "clone", plugin["url"], str(dest)])
-                            case "custom":
-                                yield from _CUSTOM_INSTALLERS[name](name, plugin["url"])
+                        yield SubprocessRun(["git", "clone", plugin["url"], str(dest)])
                         yield CopyDone(name)
 
+                case "custom":
+                    name = plugin["name"]
+                    yield from _CUSTOM_INSTALLERS[name](name, plugin["url"])
+
         all_names = [p["name"] for p in plugins]
-        missing = check_zshrc(all_names, zshrc)
+        missing = _check_zshrc(all_names, zshrc)
         if missing:
             yield Warning(
-                f"Following plugins missing from ~/.zshrc plugins=():\n"
+                f"\n"
+                f"Following plugins missing from ~/.zshrc plugins=(...):\n"
                 f"  ({' '.join(missing)})\n"
                 f"  Add them and run: source ~/.zshrc"
+                f"\n\n"
             )
 
         yield ModuleEnd(
