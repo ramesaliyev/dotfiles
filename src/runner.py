@@ -12,7 +12,6 @@ import subprocess
 import sys
 from collections import Counter
 from collections.abc import Iterator
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from src.core.events import (
@@ -30,23 +29,12 @@ from src.core.events import (
     Warning,
 )
 from src.core.files import sync_file
-from src.core.paths import HOME, REPO_ROOT
+from src.core.paths import REPO_ROOT, ppath
 
 if TYPE_CHECKING:
     from src.core.state import State
 
 SEP = "─" * 52
-
-
-def _short(path: Path) -> str:
-    """Replace home dir with ~ for display."""
-    try:
-        return "~/" + str(path.relative_to(HOME))
-    except ValueError:
-        try:
-            return str(path.relative_to(REPO_ROOT))
-        except ValueError:
-            return str(path)
 
 
 def _display(
@@ -63,16 +51,16 @@ def _display(
     """
     if isinstance(event, FileCopied):
         module_counts["copied"] += 1
-        print(f"  {prefix}{event.action} → {_short(event.dest)}")
+        print(f"  {prefix}{event.action} → {ppath(event.dest)}")
 
     elif isinstance(event, FileSkipped):
         module_counts["skipped"] += 1
         if verbose:
-            print(f"  skipped → {_short(event.dest)}  ({event.reason})")
+            print(f"  skipped → {ppath(event.dest)}  ({event.reason})")
 
     elif isinstance(event, FileConflict):
         module_counts["warned"] += 1
-        print(f"  ! conflict: {_short(event.dest)}", file=sys.stderr)
+        print(f"  ! conflict: {ppath(event.dest)}", file=sys.stderr)
 
     elif isinstance(event, CopyDone):
         module_counts["copied"] += 1
