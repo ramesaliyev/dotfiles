@@ -15,13 +15,13 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from src.core.events import (
-    CopyDone,
-    CopySkipped,
     Event,
     FileConflict,
     FileCopied,
     FileSkipped,
     Info,
+    InstallDone,
+    InstallSkipped,
     ModuleEnd,
     ModuleStart,
     SubprocessRun,
@@ -44,7 +44,7 @@ def _display(
 ) -> None:
     """Print and count a display event (FileCopied, FileSkipped, etc.).
 
-    Write events (FileCopied, CopyDone) always print — the user needs to know
+    Write events (FileCopied, InstallDone) always print — the user needs to know
     what changed. Skip events only print under --verbose since no-op is the
     expected steady-state path and would add noise to normal output.
     """
@@ -61,11 +61,11 @@ def _display(
         module_counts["warned"] += 1
         print(f"  ! conflict: {ppath(event.dest)}", file=sys.stderr)
 
-    elif isinstance(event, CopyDone):
+    elif isinstance(event, InstallDone):
         module_counts["copied"] += 1
         print(f"  installed → {event.name}")
 
-    elif isinstance(event, CopySkipped):
+    elif isinstance(event, InstallSkipped):
         module_counts["skipped"] += 1
         if verbose:
             print(f"  skipped → {event.name}")

@@ -7,10 +7,10 @@ from pathlib import Path
 
 from src.core.config import load_module_config
 from src.core.events import (
-    CopyDone,
-    CopySkipped,
     Event,
     Info,
+    InstallDone,
+    InstallSkipped,
     ModuleEnd,
     ModuleStart,
     SubprocessRun,
@@ -42,13 +42,13 @@ def _check_zshrc(plugin_names: list[str], zshrc: Path) -> list[str]:
 
 def _install_autojump(name: str, url: str) -> Iterator[Event]:
     if shutil.which("autojump"):
-        yield CopySkipped(name)
+        yield InstallSkipped(name)
         return
     tmp = Path("/tmp") / name
     yield SubprocessRun(["git", "clone", url, str(tmp)])
     yield SubprocessRun(["python3", "install.py"], cwd=tmp)
     yield SubprocessRun(["rm", "-rf", str(tmp)])
-    yield CopyDone(name)
+    yield InstallDone(name)
 
 
 _CUSTOM_INSTALLERS: dict[str, Callable[[str, str], Iterator[Event]]] = {
@@ -79,10 +79,10 @@ class ZshModule:
                     name = plugin["name"]
                     dest = plugin_dir / name
                     if dest.exists():
-                        yield CopySkipped(name)
+                        yield InstallSkipped(name)
                     else:
                         yield SubprocessRun(["git", "clone", plugin["url"], str(dest)])
-                        yield CopyDone(name)
+                        yield InstallDone(name)
 
                 case "custom":
                     name = plugin["name"]

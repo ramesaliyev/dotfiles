@@ -42,12 +42,12 @@ class SyncFile:
 
 
 @dataclass
-class CopyDone:
+class InstallDone:
     name: str
 
 
 @dataclass
-class CopySkipped:
+class InstallSkipped:
     name: str
 
 
@@ -74,8 +74,8 @@ Event = (
     | FileSkipped
     | FileConflict
     | SyncFile
-    | CopyDone
-    | CopySkipped
+    | InstallDone
+    | InstallSkipped
     | Warning
     | Info
     | SubprocessRun

@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from src.core.events import (
-    CopyDone,
-    CopySkipped,
     FileConflict,
     FileCopied,
     FileSkipped,
     Info,
+    InstallDone,
+    InstallSkipped,
     ModuleEnd,
     ModuleStart,
     SubprocessRun,
@@ -208,27 +208,27 @@ def test_module_end_readme_hidden_when_missing(monkeypatch, tmp_path, capsys):
 
 
 # ---------------------------------------------------------------------------
-# CopyDone / CopySkipped
+# InstallDone / InstallSkipped
 # ---------------------------------------------------------------------------
 
 
 def test_copy_done_prints_name(capsys):
-    _run([ModuleStart("tmux"), CopyDone("zsh-autosuggestions"), _end()])
+    _run([ModuleStart("tmux"), InstallDone("zsh-autosuggestions"), _end()])
     assert "zsh-autosuggestions" in capsys.readouterr().out
 
 
 def test_copy_done_dry_run_still_prints(capsys):
-    _run([ModuleStart("tmux"), CopyDone("zsh-autosuggestions"), _end()], dry_run=True)
+    _run([ModuleStart("tmux"), InstallDone("zsh-autosuggestions"), _end()], dry_run=True)
     assert "zsh-autosuggestions" in capsys.readouterr().out
 
 
 def test_copy_skipped_hidden_by_default(capsys):
-    _run([ModuleStart("tmux"), CopySkipped("zsh-autosuggestions"), _end()])
+    _run([ModuleStart("tmux"), InstallSkipped("zsh-autosuggestions"), _end()])
     assert "zsh-autosuggestions" not in capsys.readouterr().out
 
 
 def test_copy_skipped_visible_with_verbose(capsys):
-    _run([ModuleStart("tmux"), CopySkipped("zsh-autosuggestions"), _end()], verbose=True)
+    _run([ModuleStart("tmux"), InstallSkipped("zsh-autosuggestions"), _end()], verbose=True)
     assert "zsh-autosuggestions" in capsys.readouterr().out
 
 
