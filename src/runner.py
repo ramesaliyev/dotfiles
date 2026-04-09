@@ -48,35 +48,36 @@ def _display(
     what changed. Skip events only print under --verbose since no-op is the
     expected steady-state path and would add noise to normal output.
     """
-    if isinstance(event, FileCopied):
-        module_counts["copied"] += 1
-        print(f"  {event.action} → {ppath(event.dest)}")
+    match event:
+        case FileCopied(action=action, dest=dest):
+            module_counts["copied"] += 1
+            print(f"  {action} → {ppath(dest)}")
 
-    elif isinstance(event, FileSkipped):
-        module_counts["skipped"] += 1
-        if verbose:
-            print(f"  skipped → {ppath(event.dest)}  ({event.reason})")
+        case FileSkipped(dest=dest, reason=reason):
+            module_counts["skipped"] += 1
+            if verbose:
+                print(f"  skipped → {ppath(dest)}  ({reason})")
 
-    elif isinstance(event, FileConflict):
-        module_counts["warned"] += 1
-        print(f"  ! conflict: {ppath(event.dest)}", file=sys.stderr)
+        case FileConflict(dest=dest):
+            module_counts["warned"] += 1
+            print(f"  ! conflict: {ppath(dest)}", file=sys.stderr)
 
-    elif isinstance(event, InstallDone):
-        module_counts["copied"] += 1
-        print(f"  installed → {event.name}")
+        case InstallDone(name=name):
+            module_counts["copied"] += 1
+            print(f"  installed → {name}")
 
-    elif isinstance(event, InstallSkipped):
-        module_counts["skipped"] += 1
-        if verbose:
-            print(f"  skipped → {event.name}")
+        case InstallSkipped(name=name):
+            module_counts["skipped"] += 1
+            if verbose:
+                print(f"  skipped → {name}")
 
-    elif isinstance(event, Warning):
-        module_counts["warned"] += 1
-        for line in event.message.splitlines():
-            print(f"  ! {line}", file=sys.stderr)
+        case Warning(message=message):
+            module_counts["warned"] += 1
+            for line in message.splitlines():
+                print(f"  ! {line}", file=sys.stderr)
 
-    elif isinstance(event, Info):
-        print(f"  {event.message}")
+        case Info(message=message):
+            print(f"  {message}")
 
 
 def run(
@@ -93,38 +94,39 @@ def run(
     module_counts: Counter[str] = Counter()
 
     for event in events:
-        if isinstance(event, SyncFile):
-            for sub in sync_file(event.src, event.dest, state, force=force, dry_run=dry_run):
-                _display(sub, module_counts, verbose)
+        match event:
+            case SyncFile(src=src, dest=dest):
+                for sub in sync_file(src, dest, state, force=force, dry_run=dry_run):
+                    _display(sub, module_counts, verbose)
 
-        elif isinstance(event, SubprocessRun):
-            if not dry_run:
-                sink = None if verbose else subprocess.DEVNULL
-                subprocess.run(event.cmd, cwd=event.cwd, check=True, stdout=sink, stderr=sink)
+            case SubprocessRun(cmd=cmd, cwd=cwd):
+                if not dry_run:
+                    sink = None if verbose else subprocess.DEVNULL
+                    subprocess.run(cmd, cwd=cwd, check=True, stdout=sink, stderr=sink)
 
-        elif isinstance(event, ModuleStart):
-            module_counts = Counter()
-            print(f"\n{SEP}")
-            print(f"[{event.name}]")
+            case ModuleStart(name=name):
+                module_counts = Counter()
+                print(f"\n{SEP}")
+                print(f"[{name}]")
 
-        elif isinstance(event, ModuleEnd):
-            c = module_counts
-            print(f"  {c['copied']} copied, {c['skipped']} skipped, {c['warned']} warned")
+            case ModuleEnd(note=note, readme_rel=readme_rel):
+                c = module_counts
+                print(f"  {c['copied']} copied, {c['skipped']} skipped, {c['warned']} warned")
 
-            if event.note:
-                print()
-                for line in event.note.rstrip().splitlines():
-                    print(f"  {line}")
+                if note:
+                    print()
+                    for line in note.rstrip().splitlines():
+                        print(f"  {line}")
 
-            if event.readme_rel:
-                readme = REPO_ROOT / event.readme_rel
-                if readme.exists():
-                    print(f"  See: {event.readme_rel}")
+                if readme_rel:
+                    readme = REPO_ROOT / readme_rel
+                    if readme.exists():
+                        print(f"  See: {readme_rel}")
 
-            total += module_counts
-            module_counts = Counter()
+                total += module_counts
+                module_counts = Counter()
 
-        else:
-            _display(event, module_counts, verbose)
+            case _:
+                _display(event, module_counts, verbose)
 
     return total
