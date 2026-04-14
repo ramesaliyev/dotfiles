@@ -19,8 +19,6 @@ plugins:
 plugin_dir: $ZSH_CUSTOM/plugins
 zshrc: ~/.zshrc
 
-readme: dotfiles/zsh/README.md
-
 post_bootstrap_note: |
   No .zshrc committed — it's machine-specific.
   Make sure your ~/.zshrc includes the full list of plugins.

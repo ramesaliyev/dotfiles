@@ -13,7 +13,6 @@ class ModuleStart:
 class ModuleEnd:
     name: str
     note: str | None
-    readme_rel: str | None
 
 
 @dataclass

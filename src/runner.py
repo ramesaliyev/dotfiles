@@ -29,7 +29,7 @@ from src.core.events import (
     Warning,
 )
 from src.core.files import sync_file
-from src.core.paths import REPO_ROOT, ppath
+from src.core.paths import ppath
 
 if TYPE_CHECKING:
     from src.core.state import State
@@ -109,7 +109,7 @@ def run(
                 print(f"\n{SEP}")
                 print(f"[{name}]")
 
-            case ModuleEnd(note=note, readme_rel=readme_rel):
+            case ModuleEnd(note=note):
                 c = module_counts
                 print(f"  {c['copied']} copied, {c['skipped']} skipped, {c['warned']} warned")
 
@@ -117,11 +117,6 @@ def run(
                     print()
                     for line in note.rstrip().splitlines():
                         print(f"  {line}")
-
-                if readme_rel:
-                    readme = REPO_ROOT / readme_rel
-                    if readme.exists():
-                        print(f"  See: {readme_rel}")
 
                 total += module_counts
                 module_counts = Counter()

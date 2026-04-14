@@ -21,9 +21,17 @@ Check the output of the command. After installing `docker-buildx`, brew will pro
 ## Usage
 
 ```sh
+# Start 
 colima start
-docker run hello-world  # verify it works
+
+# Verify it works
+docker run hello-world
+
+# Stop
 colima stop
+
+# Check the status
+colima status
 ```
 
 Start Colima before running any `docker` commands. Stop it when you're done.

@@ -102,10 +102,9 @@ class ZshModule:
         yield ModuleEnd(
             name=self.name,
             note=cfg.get("post_bootstrap_note"),
-            readme_rel=cfg.get("readme"),
         )
 
     def collect(self) -> Iterator[Event]:
         yield ModuleStart(self.name)
         yield Info("no files to collect — .zshrc is machine-specific")
-        yield ModuleEnd(name=self.name, note=None, readme_rel=None)
+        yield ModuleEnd(name=self.name, note=None)

@@ -68,10 +68,6 @@ def test_plugin_names_are_unique():
     assert len(names) == len(set(names))
 
 
-def test_config_has_readme():
-    assert isinstance(_cfg().get("readme"), str)
-
-
 def test_config_has_plugin_dir():
     assert isinstance(_cfg().get("plugin_dir"), str)
     assert "$ZSH_CUSTOM" in _cfg()["plugin_dir"]

@@ -50,10 +50,6 @@ def test_repo_paths_are_relative():
         assert not entry["repo"].startswith("/")
 
 
-def test_config_has_readme():
-    assert isinstance(_cfg().get("readme"), str)
-
-
 def test_config_has_post_bootstrap_note():
     assert isinstance(_cfg().get("post_bootstrap_note"), str)
     assert len(_cfg()["post_bootstrap_note"]) > 0

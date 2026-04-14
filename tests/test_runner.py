@@ -26,7 +26,7 @@ def _run(events, *, verbose=False, dry_run=False):
 
 
 def _end(name="tmux"):
-    return ModuleEnd(name, note=None, readme_rel=None)
+    return ModuleEnd(name, note=None)
 
 
 # ---------------------------------------------------------------------------
@@ -170,41 +170,10 @@ def test_module_end_prints_note(capsys):
     _run(
         [
             ModuleStart("tmux"),
-            ModuleEnd("tmux", "Do the thing.", None),
+            ModuleEnd("tmux", "Do the thing."),
         ]
     )
     assert "Do the thing." in capsys.readouterr().out
-
-
-def test_module_end_readme_shown_when_exists(monkeypatch, tmp_path, capsys):
-    from src import runner
-
-    monkeypatch.setattr(runner, "REPO_ROOT", tmp_path)
-    readme = tmp_path / "dotfiles" / "tmux" / "README.md"
-    readme.parent.mkdir(parents=True)
-    readme.write_text("# readme")
-
-    _run(
-        [
-            ModuleStart("tmux"),
-            ModuleEnd("tmux", None, "dotfiles/tmux/README.md"),
-        ]
-    )
-    assert "dotfiles/tmux/README.md" in capsys.readouterr().out
-
-
-def test_module_end_readme_hidden_when_missing(monkeypatch, tmp_path, capsys):
-    from src import runner
-
-    monkeypatch.setattr(runner, "REPO_ROOT", tmp_path)
-
-    _run(
-        [
-            ModuleStart("tmux"),
-            ModuleEnd("tmux", None, "dotfiles/tmux/README.md"),
-        ]
-    )
-    assert "See:" not in capsys.readouterr().out
 
 
 # ---------------------------------------------------------------------------
