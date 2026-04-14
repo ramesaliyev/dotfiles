@@ -28,7 +28,7 @@ Follow the [official uv installation guide](https://docs.astral.sh/uv/getting-st
 uv python install 3.14
 ```
 
-## 7. Clone and bootstrap
+## 7. Clone the repo
 
 ```sh
 # HTTPS
@@ -37,12 +37,17 @@ git clone https://github.com/ramesaliyev/dotfiles.git ~/dotfiles
 git clone git@github.com:ramesaliyev/dotfiles.git ~/dotfiles
 
 cd ~/dotfiles
+```
+
+## 8. Bootstrap
+
+```sh
 uv run bootstrap
 ```
 
 Follow any notes printed at the end of the bootstrap run.
 
-## 8. Activate tmux config and install plugins
+## 9. Activate tmux config and install plugins
 
 After bootstrap, `~/.tmux.conf` is in place.
 
@@ -73,7 +78,7 @@ Ctrl+A  then  I
 
 TPM reloads config after installing. Sessions will auto-save every 10 minutes once plugins are in place.
 
-## 9. VS Code: Set ZSH as Default Terminal
+## 10. VS Code: Set ZSH as Default Terminal
 
 1. Press `Ctrl + Shift + P`
 2. Search: `Terminal: Select Default Profile`

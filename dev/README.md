@@ -14,7 +14,7 @@ See [MACOS.md](MACOS.md) for Docker setup on macOS.
 ./dev/docker.sh
 ```
 
-Inside the container, follow SETUP.md step by step. Skip the `git clone` in step 7 — your dotfiles are already mounted at `~/dotfiles`. This confirms that bootstrap works on a clean Linux environment.
+Inside the container, follow SETUP.md step by step. Skip step 7 (clone) — your dotfiles are already mounted at `~/dotfiles`. Continue from step 8 (bootstrap). This confirms that bootstrap works on a clean Linux environment.
 
 The `--rm` flag means the container is automatically deleted when you exit. Run the `docker run` command again to get a fresh container.
 
