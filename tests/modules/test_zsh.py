@@ -189,6 +189,9 @@ def test_bootstrap_all_exist_skips_all(tmp_path, monkeypatch):
         if p.get("url"):
             (plugin_dir / p["name"]).mkdir(parents=True)
 
+    # autojump custom installer checks shutil.which; mock it as present
+    monkeypatch.setattr(zsh_mod.shutil, "which", lambda _name: "/usr/bin/autojump")
+
     from src.core.events import InstallDone, InstallSkipped, SubprocessRun
     from src.modules.zsh.module import ZshModule
 
