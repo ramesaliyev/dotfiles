@@ -29,7 +29,11 @@ def expand_env_vars(s: str) -> tuple[str, list[str]]:
     # Only match uppercase names (POSIX convention for env vars); lowercase
     # identifiers are left as literals rather than treated as variables.
     expanded = re.sub(r"\$([A-Z_][A-Z0-9_]*)", replacer, s)
-    return str(Path(expanded).expanduser()), warnings
+
+    if "~" in expanded:
+        expanded = str(Path(expanded).expanduser())
+
+    return expanded, warnings
 
 
 def _query_shell_var(var: str) -> str | None:
