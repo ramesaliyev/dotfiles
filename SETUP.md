@@ -45,7 +45,7 @@ cd ~/dotfiles
 uv run bootstrap
 ```
 
-Follow any notes printed at the end of the bootstrap run.
+The script will print notes at the end — **hold off on those for now** and continue with the tmux setup below first.
 
 ## 9. Activate tmux config and install plugins
 
@@ -78,15 +78,13 @@ Ctrl+A  then  I
 
 TPM reloads config after installing. Sessions will auto-save every 10 minutes once plugins are in place.
 
-## 10. VS Code: Set ZSH as Default Terminal
-
-1. Press `Ctrl + Shift + P`
-2. Search: `Terminal: Select Default Profile`
-3. Select `zsh`
+**Now exit tmux and continue with whatever `uv run bootstrap` told you — you can run it again if you missed the output.**
 
 ---
 
-## Updating an existing machine
+## Notes
+
+### Updating an existing machine
 
 Running tmux sessions don't pick up config changes on disk automatically. Reload from any session:
 
@@ -100,11 +98,17 @@ If new plugins were added, install them:
 Ctrl+A  then  I
 ```
 
----
+### Tips
 
-## Troubleshooting
+#### VS Code: Set ZSH as Default Terminal
 
-### tmux opens the wrong shell
+1. Press `Ctrl + Shift + P`
+2. Search: `Terminal: Select Default Profile`
+3. Select `zsh`
+
+### Troubleshooting
+
+#### tmux opens the wrong shell
 
 tmux reads `$SHELL` from the **server process environment** — the environment that existed when the tmux server was first started, not from whatever shell you ran `tmux` from. tmux-sensible then sets `default-shell` from that value. New sessions and windows always inherit from the running server, not from the calling shell.
 
