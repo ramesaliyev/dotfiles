@@ -45,29 +45,14 @@ cd ~/dotfiles
 uv run bootstrap
 ```
 
-The script will print notes at the end — **hold off on those for now** and continue with the tmux setup below first.
+Bootstrap syncs all config files and automatically reloads the tmux config if a server is running.
 
-## 9. Activate tmux config and install plugins
+## 9. Install tmux plugins
 
-After bootstrap, `~/.tmux.conf` is in place.
-
-If you already have a tmux session running, reload the config first, then attach:
-
-```bash
-tmux source-file ~/.tmux.conf
-tmux
-```
-
-If you don't have tmux running, just start a session — it will pick up the config automatically:
+Start a tmux session:
 
 ```bash
 tmux
-```
-
-If you're not sure, run both — `source-file` will error harmlessly if no server is running:
-
-```bash
-tmux source-file ~/.tmux.conf; tmux
 ```
 
 Then inside tmux, install plugins:
@@ -77,8 +62,6 @@ Ctrl+A  then  I
 ```
 
 TPM reloads config after installing. Sessions will auto-save every 10 minutes once plugins are in place.
-
-**Now exit tmux and continue with whatever `uv run bootstrap` told you — you can run it again if you missed the output.**
 
 ---
 

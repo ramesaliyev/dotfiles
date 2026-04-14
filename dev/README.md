@@ -10,13 +10,21 @@ See [MACOS.md](MACOS.md) for Docker setup on macOS.
 
 ### Build and run
 
+Following will spin-up one-time container for testing, which will be removed when you exit.
+
 ```sh
 ./dev/docker.sh
 ```
 
 Inside the container, follow SETUP.md step by step. Skip step 7 (clone) — your dotfiles are already mounted at `~/dotfiles`. Continue from step 8 (bootstrap). This confirms that bootstrap works on a clean Linux environment.
 
-The `--rm` flag means the container is automatically deleted when you exit. Run the `docker run` command again to get a fresh container.
+For a quicker test run, `auto.sh` automates all the SETUP.md prerequisites in one shot:
+
+```sh
+./dev/auto.sh
+```
+
+This installs zsh, oh-my-zsh, tmux, TPM, uv, and Python 3.14 — then drops you into a zsh session ready to run `uv run bootstrap`.
 
 ## Pre-commit hooks
 
