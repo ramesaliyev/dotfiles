@@ -1,5 +1,19 @@
 # First-time Setup
 
+## Automatic
+
+A single script supports macOS, Ubuntu/Debian, and Fedora — it detects your environment automatically. Try it first:
+
+```sh
+./setup/auto.sh
+```
+
+This installs all prerequisites and drops you into a zsh session ready to run `uv run bootstrap`. If anything fails, fall back to the manual steps below.
+
+---
+
+## Manual
+
 Follow these steps in order on a fresh machine before running `uv run bootstrap`.
 
 ## 1. Install zsh and set as default shell
@@ -28,7 +42,9 @@ Follow the [official uv installation guide](https://docs.astral.sh/uv/getting-st
 uv python install 3.14
 ```
 
-## 7. Clone the repo
+## 7. Bootstrap
+
+Clone the repo if you haven't already and go into it:
 
 ```sh
 # HTTPS
@@ -39,29 +55,11 @@ git clone git@github.com:ramesaliyev/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ```
 
-## 8. Bootstrap
+Then run bootstrap and follow any instructions it prints:
 
 ```sh
 uv run bootstrap
 ```
-
-Bootstrap syncs all config files and automatically reloads the tmux config if a server is running.
-
-## 9. Install tmux plugins
-
-Start a tmux session:
-
-```bash
-tmux
-```
-
-Then inside tmux, install plugins:
-
-```
-Ctrl+A  then  I
-```
-
-TPM reloads config after installing. Sessions will auto-save every 10 minutes once plugins are in place.
 
 ---
 

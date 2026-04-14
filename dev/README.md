@@ -2,7 +2,7 @@
 
 ## Test environment (Docker)
 
-The Dockerfile provides an Ubuntu 24.04 image with only the essentials needed to follow [SETUP.md](../SETUP.md) inside the container (sudo, curl, git). The purpose is to validate the full bootstrap flow from scratch.
+The Dockerfile provides an Ubuntu 24.04 image with only the essentials needed to follow [setup/README.md](../setup/README.md) inside the container (sudo, curl, git). The purpose is to validate the full bootstrap flow from scratch.
 
 ### Prerequisites (macOS)
 
@@ -16,12 +16,12 @@ Following will spin-up one-time container for testing, which will be removed whe
 ./dev/docker.sh
 ```
 
-Inside the container, follow SETUP.md step by step. Skip step 7 (clone) — your dotfiles are already mounted at `~/dotfiles`. Continue from step 8 (bootstrap). This confirms that bootstrap works on a clean Linux environment.
+Inside the container, follow setup/README.md step by step. Skip step 7 (clone) — your dotfiles are already mounted at `~/dotfiles`. Continue from step 8 (bootstrap). This confirms that bootstrap works on a clean Linux environment.
 
-For a quicker test run, `auto.sh` automates all the SETUP.md prerequisites in one shot:
+For a quicker test run, use the Ubuntu auto-script:
 
 ```sh
-./dev/auto.sh
+./setup/auto.sh
 ```
 
 This installs zsh, oh-my-zsh, tmux, TPM, uv, and Python 3.14 — then drops you into a zsh session ready to run `uv run bootstrap`.

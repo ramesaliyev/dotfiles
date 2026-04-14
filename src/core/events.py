@@ -61,6 +61,11 @@ class Info:
 
 
 @dataclass
+class ActionRequired:
+    message: str
+
+
+@dataclass
 class SubprocessRun:
     cmd: list[str]
     cwd: Path | None = None
@@ -77,5 +82,6 @@ Event = (
     | InstallSkipped
     | Warning
     | Info
+    | ActionRequired
     | SubprocessRun
 )

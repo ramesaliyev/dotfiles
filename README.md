@@ -1,6 +1,6 @@
 # dotfiles
 
-First time on a new machine? Follow [SETUP.md](SETUP.md) before running these commands.
+First time on a new machine? Follow [setup/README.md](setup/README.md) before running these commands.
 
 ```bash
 uv run collect    # pull latest configs from this machine into the repo

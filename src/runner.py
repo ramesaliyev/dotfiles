@@ -15,6 +15,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from src.core.events import (
+    ActionRequired,
     Event,
     FileConflict,
     FileCopied,
@@ -78,6 +79,11 @@ def _display(
 
         case Info(message=message):
             print(f"  {message}")
+
+        case ActionRequired(message=message):
+            green = "\033[32m" if sys.stdout.isatty() else ""
+            reset = "\033[0m" if sys.stdout.isatty() else ""
+            print(f"\n  {green}{message}{reset}")
 
 
 def run(
