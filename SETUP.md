@@ -44,16 +44,25 @@ Follow any notes printed at the end of the bootstrap run.
 
 ## 8. Activate tmux config and install plugins
 
-After bootstrap, `~/.tmux.conf` is in place. Start a tmux session so it loads the config:
+After bootstrap, `~/.tmux.conf` is in place.
+
+If you already have a tmux session running, reload the config first, then attach:
+
+```bash
+tmux source-file ~/.tmux.conf
+tmux
+```
+
+If you don't have tmux running, just start a session — it will pick up the config automatically:
 
 ```bash
 tmux
 ```
 
-If a tmux server was already running before bootstrap, reload the config from outside:
+If you're not sure, run both — `source-file` will error harmlessly if no server is running:
 
 ```bash
-tmux source-file ~/.tmux.conf
+tmux source-file ~/.tmux.conf; tmux
 ```
 
 Then inside tmux, install plugins:

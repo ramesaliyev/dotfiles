@@ -20,17 +20,44 @@ Check the output of the command. After installing `docker-buildx`, brew will pro
 
 ## Usage
 
-```sh
-# Start 
-colima start
+### First-time setup
 
-# Verify it works
-docker run hello-world
+After installing, fix the MTU before starting Colima. Docker's default MTU (1500) causes packet fragmentation inside the VM, which significantly slows down network operations.
+
+Start Colima once so it generates the config file:
+
+```sh
+colima start
+colima stop
+```
+
+Then add `mtu: 1450` under the `docker:` section in `~/.colima/default/colima.yaml`:
+
+```yaml
+docker:
+  mtu: 1450
+```
+
+Start Colima again and verify:
+
+```sh
+colima start
+docker run --rm ubuntu:24.04 cat /sys/class/net/eth0/mtu
+# should show 1450
+```
+
+This persists across `colima delete`/`start` cycles as Colima generates the Docker daemon config from this file on every start.
+
+### Daily use
+
+```sh
+# Start
+colima start
 
 # Stop
 colima stop
 
-# Check the status
+# Check status
 colima status
 ```
 
