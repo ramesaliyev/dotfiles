@@ -20,36 +20,6 @@ Check the output of the command. After installing `docker-buildx`, brew will pro
 
 ## Usage
 
-### First-time setup
-
-After installing, fix the MTU before starting Colima. Docker's default MTU (1500) causes packet fragmentation inside the VM, which significantly slows down network operations.
-
-Start Colima once so it generates the config file:
-
-```sh
-colima start
-colima stop
-```
-
-Then add `mtu: 1450` under the `docker:` section in `~/.colima/default/colima.yaml`:
-
-```yaml
-docker:
-  mtu: 1450
-```
-
-Start Colima again and verify:
-
-```sh
-colima start
-docker run --rm ubuntu:24.04 cat /sys/class/net/eth0/mtu
-# should show 1450
-```
-
-This persists across `colima delete`/`start` cycles as Colima generates the Docker daemon config from this file on every start.
-
-### Daily use
-
 ```sh
 # Start
 colima start
@@ -62,6 +32,25 @@ colima status
 ```
 
 Start Colima before running any `docker` commands. Stop it when you're done.
+
+## Troubleshooting
+
+### Slow network inside containers
+
+If downloads inside containers are very slow (~100 KB/s), test the VM's network speed:
+
+```sh
+colima ssh -- curl -L -o /dev/null -w "Speed: %{speed_download} bytes/sec\n" https://files.pythonhosted.org/packages/source/p/pip/pip-24.3.1.tar.gz
+```
+
+If it's slow, a full reinstall (see below) usually fixes it — likely corrupted state. If that doesn't help, run `colima start` once to generate the config, then stop it and set `network.address: true` in `~/.colima/default/colima.yaml` — this switches from user-space NAT to macOS's vmnet framework:
+
+```yaml
+network:
+  address: true
+```
+
+Then `colima delete && colima start`.
 
 ## Uninstall / reset
 
