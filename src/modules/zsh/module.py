@@ -1,21 +1,51 @@
 from __future__ import annotations
 
 import re
-import shutil
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from pathlib import Path
 
 from src.core.config import load_module_config
 from src.core.events import (
+    ActionRequired,
     Event,
     Info,
     InstallDone,
+    InstallPackage,
     InstallSkipped,
     ModuleEnd,
     ModuleStart,
     SubprocessRun,
     Warning,
 )
+
+
+def _inject_plugins(missing: list[str], zshrc: Path) -> bool:
+    """Add missing plugin names into the plugins=(...) block. Returns True on success.
+
+    Skips comment lines so that an example like ``# plugins=(...)`` is not
+    mistaken for the real block.
+    """
+    text = zshrc.read_text()
+    lines = text.splitlines(keepends=True)
+
+    # Find the byte offset where the first non-comment line containing plugins=( starts.
+    offset = 0
+    for line in lines:
+        if not line.lstrip().startswith("#") and "plugins=(" in line:
+            break
+        offset += len(line)
+    else:
+        return False
+
+    m = re.search(r"(plugins=\()([^)]*)(\))", text[offset:], re.DOTALL)
+    if not m:
+        return False
+
+    abs_start = offset + m.start()
+    abs_end = offset + m.end()
+    updated = m.group(2).rstrip() + " " + " ".join(missing)
+    zshrc.write_text(text[:abs_start] + m.group(1) + updated + m.group(3) + text[abs_end:])
+    return True
 
 
 def _check_zshrc(plugin_names: list[str], zshrc: Path) -> list[str]:
@@ -38,22 +68,6 @@ def _check_zshrc(plugin_names: list[str], zshrc: Path) -> list[str]:
     # split() without args tokenises on any whitespace and skips empty strings.
     active = set(match.group(1).split())
     return sorted(set(plugin_names) - active)
-
-
-def _install_autojump(name: str, url: str) -> Iterator[Event]:
-    if shutil.which("autojump"):
-        yield InstallSkipped(name)
-        return
-    tmp = Path("/tmp") / name
-    yield SubprocessRun(["git", "clone", url, str(tmp)])
-    yield SubprocessRun(["python3", "install.py"], cwd=tmp)
-    yield SubprocessRun(["rm", "-rf", str(tmp)])
-    yield InstallDone(name)
-
-
-_CUSTOM_INSTALLERS: dict[str, Callable[[str, str], Iterator[Event]]] = {
-    "autojump": _install_autojump,
-}
 
 
 class ZshModule:
@@ -84,25 +98,31 @@ class ZshModule:
                         yield SubprocessRun(["git", "clone", plugin["url"], str(dest)])
                         yield InstallDone(name)
 
-                case "custom":
-                    name = plugin["name"]
-                    yield from _CUSTOM_INSTALLERS[name](name, plugin["url"])
+                case "package":
+                    yield InstallPackage(name=plugin["name"], managers=plugin.get("packages"))
 
         all_names = [p["name"] for p in plugins]
-        missing = _check_zshrc(all_names, zshrc)
-        if missing:
-            yield Warning(
-                f"\n"
-                f"Following plugins missing from ~/.zshrc plugins=(...):\n"
-                f"  ({' '.join(missing)})\n"
-                f"  Add them and run: source ~/.zshrc"
-                f"\n\n"
-            )
 
-        yield ModuleEnd(
-            name=self.name,
-            note=cfg.get("post_bootstrap_note"),
-        )
+        if not zshrc.exists():
+            yield Warning(
+                "~/.zshrc not found — create it and add:\n  plugins=(" + " ".join(all_names) + ")"
+            )
+        else:
+            missing = _check_zshrc(all_names, zshrc)
+            if missing:
+                if _inject_plugins(missing, zshrc):
+                    for n in missing:
+                        yield Info(f"added to .zshrc → {n}")
+                    yield ActionRequired("source ~/.zshrc or open a new terminal to activate.")
+                else:
+                    yield Warning(
+                        "No plugins=() block found in ~/.zshrc — add these manually:\n"
+                        "  plugins=(" + " ".join(all_names) + ")"
+                    )
+            else:
+                yield Info("Already up to date.")
+
+        yield ModuleEnd(name=self.name, note=None)
 
     def collect(self) -> Iterator[Event]:
         yield ModuleStart(self.name)

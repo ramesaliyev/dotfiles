@@ -13,12 +13,11 @@ plugins:
     type: gitrepo
     url: https://github.com/MichaelAquilina/zsh-you-should-use.git
   - name: autojump
-    type: custom
-    url: https://github.com/wting/autojump.git
+    type: package
+    packages:
+      apt: autojump
+      dnf: autojump
+      brew: autojump
 
 plugin_dir: $ZSH_CUSTOM/plugins
 zshrc: ~/.zshrc
-
-post_bootstrap_note: |
-  No .zshrc committed — it's machine-specific.
-  Make sure your ~/.zshrc includes the full list of plugins.

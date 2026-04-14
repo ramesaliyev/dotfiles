@@ -41,6 +41,12 @@ class SyncFile:
 
 
 @dataclass
+class InstallPackage:
+    name: str
+    managers: dict[str, str] | None = None  # None → use name for every PM
+
+
+@dataclass
 class InstallDone:
     name: str
 
@@ -78,6 +84,7 @@ Event = (
     | FileSkipped
     | FileConflict
     | SyncFile
+    | InstallPackage
     | InstallDone
     | InstallSkipped
     | Warning

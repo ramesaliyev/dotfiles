@@ -22,6 +22,7 @@ from src.core.events import (
     FileSkipped,
     Info,
     InstallDone,
+    InstallPackage,
     InstallSkipped,
     ModuleEnd,
     ModuleStart,
@@ -30,6 +31,7 @@ from src.core.events import (
     Warning,
 )
 from src.core.files import sync_file
+from src.core.packages import install_package
 from src.core.paths import ppath
 
 if TYPE_CHECKING:
@@ -103,6 +105,10 @@ def run(
         match event:
             case SyncFile(src=src, dest=dest):
                 for sub in sync_file(src, dest, state, force=force, dry_run=dry_run):
+                    _display(sub, module_counts, verbose)
+
+            case InstallPackage():
+                for sub in install_package(event, dry_run=dry_run):
                     _display(sub, module_counts, verbose)
 
             case SubprocessRun(cmd=cmd, cwd=cwd):

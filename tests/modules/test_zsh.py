@@ -46,13 +46,13 @@ def test_plugins_with_url_are_github():
             assert url.startswith("https://github.com/")
 
 
-def test_autojump_has_custom_type():
+def test_autojump_has_package_type():
     plugins = {p["name"]: p for p in _cfg()["plugins"]}
-    assert plugins["autojump"].get("type") == "custom"
+    assert plugins["autojump"].get("type") == "package"
 
 
 def test_all_plugins_have_type():
-    valid_types = {"builtin", "gitrepo", "custom"}
+    valid_types = {"builtin", "gitrepo", "package"}
     for p in _cfg()["plugins"]:
         assert p.get("type") in valid_types
 
@@ -184,9 +184,6 @@ def test_bootstrap_all_exist_skips_all(tmp_path, monkeypatch):
     for p in _cfg()["plugins"]:
         if p.get("url"):
             (plugin_dir / p["name"]).mkdir(parents=True)
-
-    # autojump custom installer checks shutil.which; mock it as present
-    monkeypatch.setattr(zsh_mod.shutil, "which", lambda _name: "/usr/bin/autojump")
 
     from src.core.events import InstallDone, InstallSkipped, SubprocessRun
     from src.modules.zsh.module import ZshModule
