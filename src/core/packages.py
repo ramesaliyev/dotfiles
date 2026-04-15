@@ -13,7 +13,7 @@ import shutil
 import subprocess
 from collections.abc import Iterator
 
-from src.core.events import InstallDone, InstallPackage, InstallSkipped, Warning
+from src.core.events import Done, InstallPackage, Skipped, Warning
 
 # key → full install command; cmd[0] is also the binary to detect
 _KNOWN_MANAGERS: dict[str, list[str]] = {
@@ -27,9 +27,9 @@ def install_package(
     event: InstallPackage,
     *,
     dry_run: bool,
-) -> Iterator[InstallDone | InstallSkipped | Warning]:
+) -> Iterator[Done | Skipped | Warning]:
     if shutil.which(event.name):
-        yield InstallSkipped(event.name)
+        yield Skipped(event.name)
         return
 
     managers = (
@@ -40,7 +40,7 @@ def install_package(
         if shutil.which(cmd[0]) and key in managers:
             if not dry_run:
                 subprocess.run([*cmd, managers[key]], check=True)
-            yield InstallDone(event.name)
+            yield Done(event.name)
             return
 
     yield Warning(f"No supported package manager found for {event.name}.")

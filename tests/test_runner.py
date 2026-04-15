@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from src.core.events import (
+    Done,
     FileConflict,
     FileCopied,
-    FileSkipped,
+    GitClone,
     Info,
-    InstallDone,
-    InstallSkipped,
     ModuleEnd,
     ModuleStart,
+    Skipped,
     SubprocessRun,
     Warning,
 )
@@ -49,13 +49,13 @@ def test_file_copied_dry_run_still_prints(tmp_path, capsys):
 
 
 # ---------------------------------------------------------------------------
-# FileSkipped
+# Skipped -- file skipped
 # ---------------------------------------------------------------------------
 
 
 def test_file_skipped_hidden_by_default(tmp_path, capsys):
     dest = tmp_path / "foo.conf"
-    _run([ModuleStart("tmux"), FileSkipped(dest=dest, reason="unchanged"), _end()])
+    _run([ModuleStart("tmux"), Skipped(name=str(dest), details="unchanged"), _end()])
     # Per-item line hidden; only the summary count should mention "skipped"
     out = capsys.readouterr().out
     assert str(dest) not in out
@@ -63,7 +63,7 @@ def test_file_skipped_hidden_by_default(tmp_path, capsys):
 
 def test_file_skipped_visible_with_verbose(tmp_path, capsys):
     dest = tmp_path / "foo.conf"
-    _run([ModuleStart("tmux"), FileSkipped(dest=dest, reason="unchanged"), _end()], verbose=True)
+    _run([ModuleStart("tmux"), Skipped(name=str(dest), details="unchanged"), _end()], verbose=True)
     assert str(dest) in capsys.readouterr().out
 
 
@@ -157,7 +157,7 @@ def test_module_end_prints_counts(tmp_path, capsys):
             ModuleStart("tmux"),
             FileCopied(src=dest, dest=dest, action="copied"),
             FileCopied(src=dest, dest=dest, action="copied"),
-            FileSkipped(dest=dest, reason="unchanged"),
+            Skipped(name=str(dest), details="unchanged"),
             _end(),
         ]
     )
@@ -177,28 +177,53 @@ def test_module_end_prints_note(capsys):
 
 
 # ---------------------------------------------------------------------------
-# InstallDone / InstallSkipped
+# Done / Skipped
 # ---------------------------------------------------------------------------
 
 
 def test_copy_done_prints_name(capsys):
-    _run([ModuleStart("tmux"), InstallDone("zsh-autosuggestions"), _end()])
+    _run([ModuleStart("tmux"), Done("zsh-autosuggestions"), _end()])
     assert "zsh-autosuggestions" in capsys.readouterr().out
 
 
 def test_copy_done_dry_run_still_prints(capsys):
-    _run([ModuleStart("tmux"), InstallDone("zsh-autosuggestions"), _end()], dry_run=True)
+    _run([ModuleStart("tmux"), Done("zsh-autosuggestions"), _end()], dry_run=True)
     assert "zsh-autosuggestions" in capsys.readouterr().out
 
 
 def test_copy_skipped_hidden_by_default(capsys):
-    _run([ModuleStart("tmux"), InstallSkipped("zsh-autosuggestions"), _end()])
+    _run([ModuleStart("tmux"), Skipped("zsh-autosuggestions"), _end()])
     assert "zsh-autosuggestions" not in capsys.readouterr().out
 
 
 def test_copy_skipped_visible_with_verbose(capsys):
-    _run([ModuleStart("tmux"), InstallSkipped("zsh-autosuggestions"), _end()], verbose=True)
+    _run([ModuleStart("tmux"), Skipped("zsh-autosuggestions"), _end()], verbose=True)
     assert "zsh-autosuggestions" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# GitClone
+# ---------------------------------------------------------------------------
+
+
+def test_git_clone_runs_subprocess(monkeypatch, tmp_path):
+    import subprocess as sp
+
+    calls = []
+    monkeypatch.setattr(sp, "run", lambda *a, **kw: calls.append((a, kw)))
+    dest = tmp_path / "plugin"
+    _run([GitClone(url="https://github.com/example/repo", dest=dest)])
+    assert len(calls) == 1
+    assert calls[0][0][0] == ["git", "clone", "https://github.com/example/repo", str(dest)]
+
+
+def test_git_clone_dry_run_no_subprocess(monkeypatch, tmp_path):
+    import subprocess as sp
+
+    calls = []
+    monkeypatch.setattr(sp, "run", lambda *a, **kw: calls.append((a, kw)))
+    _run([GitClone(url="https://github.com/example/repo", dest=tmp_path / "plugin")], dry_run=True)
+    assert len(calls) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -212,7 +237,7 @@ def test_run_returns_total_counts(tmp_path):
         [
             ModuleStart("tmux"),
             FileCopied(src=tmp_path / "src.conf", dest=dest, action="copied"),
-            FileSkipped(dest=dest, reason="unchanged"),
+            Skipped(name=str(dest), details="unchanged"),
             Warning("oops"),
             _end(),
         ]

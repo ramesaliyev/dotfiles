@@ -10,9 +10,9 @@ dest = where the file will be written
 State is keyed by str(dest). The decision table is direction-agnostic:
   src missing            → Warning, skip
   dest missing           → copy (FileCopied action="copied")
-  no entry, same csum    → adopt silently (FileSkipped)
+  no entry, same csum    → adopt silently (Skipped)
   no entry, differ       → conflict: force overwrite or prompt
-  nothing changed        → FileSkipped
+  nothing changed        → Skipped
   only src changed       → safe update (FileCopied action="updated")
   only dest changed      → local modification, leave alone (Warning)
   both changed           → conflict: force overwrite or prompt
@@ -26,7 +26,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from src.core.checksum import checksum
-from src.core.events import FileConflict, FileCopied, FileSkipped, Warning
+from src.core.events import FileConflict, FileCopied, Skipped, Warning
+from src.core.paths import ppath
 from src.core.prompt import ask_overwrite
 from src.core.time import now_iso
 
@@ -41,7 +42,7 @@ def sync_file(
     *,
     force: bool,
     dry_run: bool,
-) -> Iterator[FileCopied | FileSkipped | FileConflict | Warning]:
+) -> Iterator[FileCopied | FileConflict | Skipped | Warning]:
     # Case: src missing - can't do anything, just warn and skip.
     if not src.exists():
         yield Warning(f"not found, skipping: {src}")
@@ -72,7 +73,7 @@ def sync_file(
     if entry is None and current_src_cs == current_dest_cs:
         if not dry_run:
             state["entries"][dest_key] = new_entry
-        yield FileSkipped(dest=dest, reason="unchanged")
+        yield Skipped(name=ppath(dest), details="unchanged")
         return
 
     if entry is None:
@@ -86,7 +87,7 @@ def sync_file(
 
     # Case: nothing changed — skip.
     if not src_changed and not dest_changed:
-        yield FileSkipped(dest=dest, reason="unchanged")
+        yield Skipped(name=ppath(dest), details="unchanged")
         return
 
     # Case: only src changed — safe update, no conflict.
@@ -112,4 +113,4 @@ def sync_file(
             state["entries"][dest_key] = new_entry
         yield FileCopied(src=src, dest=dest, action="overwritten")
     else:
-        yield FileSkipped(dest=dest, reason="kept local")
+        yield Skipped(name=ppath(dest), details="kept local")

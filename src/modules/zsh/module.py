@@ -7,14 +7,14 @@ from pathlib import Path
 from src.core.config import load_module_config
 from src.core.events import (
     ActionRequired,
+    Done,
     Event,
+    GitClone,
     Info,
-    InstallDone,
     InstallPackage,
-    InstallSkipped,
     ModuleEnd,
     ModuleStart,
-    SubprocessRun,
+    Skipped,
     Warning,
 )
 
@@ -93,10 +93,10 @@ class ZshModule:
                     name = plugin["name"]
                     dest = plugin_dir / name
                     if dest.exists():
-                        yield InstallSkipped(name)
+                        yield Skipped(name)
                     else:
-                        yield SubprocessRun(["git", "clone", plugin["url"], str(dest)])
-                        yield InstallDone(name)
+                        yield GitClone(url=plugin["url"], dest=dest)
+                        yield Done(name)
 
                 case "package":
                     yield InstallPackage(name=plugin["name"], managers=plugin.get("packages"))

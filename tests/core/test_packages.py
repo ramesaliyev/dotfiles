@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import src.core.packages as pkg_mod
-from src.core.events import InstallDone, InstallPackage, InstallSkipped, Warning
+from src.core.events import Done, InstallPackage, Skipped, Warning
 from src.core.packages import install_package
 
 
@@ -21,7 +21,7 @@ def test_already_installed_skips(monkeypatch):
         pkg_mod.shutil, "which", lambda name: "/usr/bin/autojump" if name == "autojump" else None
     )
     events = _run(InstallPackage(name="autojump"))
-    assert events == [InstallSkipped("autojump")]
+    assert events == [Skipped("autojump")]
 
 
 # ---------------------------------------------------------------------------
@@ -43,7 +43,7 @@ def test_install_via_brew(monkeypatch):
 
     events = _run(InstallPackage(name="autojump", managers={"brew": "autojump"}))
 
-    assert events == [InstallDone("autojump")]
+    assert events == [Done("autojump")]
     assert calls == [["brew", "install", "autojump"]]
 
 
@@ -61,7 +61,7 @@ def test_install_via_apt(monkeypatch):
 
     events = _run(InstallPackage(name="autojump", managers={"apt": "autojump"}))
 
-    assert events == [InstallDone("autojump")]
+    assert events == [Done("autojump")]
     assert calls == [["apt-get", "install", "-y", "autojump"]]
 
 
@@ -84,7 +84,7 @@ def test_managers_none_uses_name_for_all(monkeypatch):
 
     events = _run(InstallPackage(name="mypkg"))  # managers=None
 
-    assert events == [InstallDone("mypkg")]
+    assert events == [Done("mypkg")]
     assert calls == [["brew", "install", "mypkg"]]
 
 
@@ -103,12 +103,12 @@ def test_managers_override_package_name(monkeypatch):
 
     events = _run(InstallPackage(name="j", managers={"brew": "autojump"}))
 
-    assert events == [InstallDone("j")]
+    assert events == [Done("j")]
     assert calls == [["brew", "install", "autojump"]]
 
 
 # ---------------------------------------------------------------------------
-# dry_run — no subprocess, but InstallDone is still yielded
+# dry_run — no subprocess, but Done is still yielded
 # ---------------------------------------------------------------------------
 
 
@@ -122,7 +122,7 @@ def test_dry_run_yields_done_no_subprocess(monkeypatch):
 
     events = _run(InstallPackage(name="autojump", managers={"brew": "autojump"}), dry_run=True)
 
-    assert events == [InstallDone("autojump")]
+    assert events == [Done("autojump")]
     assert calls == []
 
 

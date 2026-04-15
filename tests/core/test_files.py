@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from src.core.checksum import checksum
-from src.core.events import FileConflict, FileCopied, FileSkipped, Warning
+from src.core.events import FileConflict, FileCopied, Skipped, Warning
 from src.core.files import sync_file
 
 # ---------------------------------------------------------------------------
@@ -89,7 +89,7 @@ def test_untracked_same_content_adopts_silently(tmp_path):
 
     events = _run(src, dest, state)
 
-    assert isinstance(events[0], FileSkipped)
+    assert isinstance(events[0], Skipped)
     assert str(dest) in state["entries"]
 
 
@@ -122,7 +122,7 @@ def test_untracked_diff_content_user_no(monkeypatch, tmp_path):
 
     events = _run(src, dest, _state())
 
-    assert any(isinstance(e, FileSkipped) and e.reason == "kept local" for e in events)
+    assert any(isinstance(e, Skipped) and e.details == "kept local" for e in events)
     assert dest.read_bytes() == b"old"
 
 
@@ -138,7 +138,7 @@ def test_nothing_changed_skips(tmp_path):
 
     events = _run(src, dest, state)
 
-    assert isinstance(events[0], FileSkipped)
+    assert isinstance(events[0], Skipped)
     assert dest.read_bytes() == b"v1"
 
 

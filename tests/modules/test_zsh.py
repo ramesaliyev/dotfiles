@@ -159,12 +159,12 @@ def test_bootstrap_yields_copy_done_for_new_plugins(tmp_path, monkeypatch):
     monkeypatch.setattr(zsh_mod.ZshModule, "_load_config", cfg_gen)
     (tmp_path / ".zshrc").write_text("plugins=()\n")
 
-    from src.core.events import InstallDone
+    from src.core.events import Done
     from src.modules.zsh.module import ZshModule
 
     events = list(ZshModule().bootstrap())
 
-    installed = [e for e in events if isinstance(e, InstallDone)]
+    installed = [e for e in events if isinstance(e, Done)]
     assert len(installed) > 0
 
 
@@ -185,14 +185,14 @@ def test_bootstrap_all_exist_skips_all(tmp_path, monkeypatch):
         if p.get("url"):
             (plugin_dir / p["name"]).mkdir(parents=True)
 
-    from src.core.events import InstallDone, InstallSkipped, SubprocessRun
+    from src.core.events import Done, GitClone, Skipped
     from src.modules.zsh.module import ZshModule
 
     events = list(ZshModule().bootstrap())
 
-    assert not any(isinstance(e, SubprocessRun) for e in events)
-    assert not any(isinstance(e, InstallDone) for e in events)
-    assert any(isinstance(e, InstallSkipped) for e in events)
+    assert not any(isinstance(e, GitClone) for e in events)
+    assert not any(isinstance(e, Done) for e in events)
+    assert any(isinstance(e, Skipped) for e in events)
 
 
 # ---------------------------------------------------------------------------

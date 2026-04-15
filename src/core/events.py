@@ -23,12 +23,6 @@ class FileCopied:
 
 
 @dataclass
-class FileSkipped:
-    dest: Path
-    reason: str  # "unchanged" | "kept local"
-
-
-@dataclass
 class FileConflict:
     dest: Path
     description: str
@@ -47,13 +41,20 @@ class InstallPackage:
 
 
 @dataclass
-class InstallDone:
+class Done:
     name: str
 
 
 @dataclass
-class InstallSkipped:
+class Skipped:
     name: str
+    details: str | None = None
+
+
+@dataclass
+class GitClone:
+    url: str
+    dest: Path
 
 
 @dataclass
@@ -81,12 +82,12 @@ Event = (
     ModuleStart
     | ModuleEnd
     | FileCopied
-    | FileSkipped
     | FileConflict
     | SyncFile
     | InstallPackage
-    | InstallDone
-    | InstallSkipped
+    | Done
+    | Skipped
+    | GitClone
     | Warning
     | Info
     | ActionRequired
