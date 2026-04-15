@@ -27,6 +27,7 @@ def install_package(
     event: InstallPackage,
     *,
     dry_run: bool,
+    sink: int | None = subprocess.DEVNULL,
 ) -> Iterator[Done | Skipped | Warning]:
     if shutil.which(event.name):
         yield Skipped(event.name)
@@ -39,7 +40,7 @@ def install_package(
     for key, cmd in _KNOWN_MANAGERS.items():
         if shutil.which(cmd[0]) and key in managers:
             if not dry_run:
-                subprocess.run([*cmd, managers[key]], check=True)
+                subprocess.run([*cmd, managers[key]], check=True, stdout=sink, stderr=sink)
             yield Done(event.name)
             return
 

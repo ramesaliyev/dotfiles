@@ -106,7 +106,7 @@ def run(
                     _display(sub, module_counts, verbose)
 
             case InstallPackage():
-                for sub in install_package(event, dry_run=dry_run):
+                for sub in install_package(event, dry_run=dry_run, sink=sink):
                     _display(sub, module_counts, verbose)
 
             case GitClone(url=url, dest=dest):
