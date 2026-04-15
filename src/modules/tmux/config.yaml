@@ -5,7 +5,3 @@ files:
     repo: dotfiles/tmux/tmux-powerline/config.sh
   - machine: ~/.config/tmux-powerline/themes/default.sh
     repo: dotfiles/tmux/tmux-powerline/themes/default.sh
-
-post_bootstrap_note: |
-  Plugins not committed — must be set up manually.
-    Ctrl+A R to reload config, then Ctrl+A I to install plugins.

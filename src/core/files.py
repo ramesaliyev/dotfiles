@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import shutil
 from collections.abc import Iterator
+from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -32,7 +33,46 @@ from src.core.prompt import ask_overwrite
 from src.core.time import now_iso
 
 if TYPE_CHECKING:
-    from src.core.state import Entry, State
+    from src.core.state import State
+
+
+class SyncOutcome(Enum):
+    SRC_MISSING = "src_missing"  # src doesn't exist → Warning, skip
+    WILL_COPY = "will_copy"  # dest missing → will copy unconditionally
+    UNCHANGED = "unchanged"  # nothing to do (Skipped)
+    WILL_UPDATE = "will_update"  # only src changed → safe update
+    LOCAL_MODIFIED = "local_modified"  # only dest changed → leave alone (Warning)
+    WILL_CONFLICT = "will_conflict"  # both changed → needs resolution
+
+
+def predict_sync(src: Path, dest: Path, state: State) -> SyncOutcome:
+    """Predict the outcome of syncing src → dest without performing any changes."""
+    if not src.exists():
+        return SyncOutcome.SRC_MISSING
+    if not dest.exists():
+        return SyncOutcome.WILL_COPY
+
+    current_src_cs = checksum(src)
+    current_dest_cs = checksum(dest)
+    entry = state["entries"].get(str(dest))
+
+    if entry is None and current_src_cs == current_dest_cs:
+        return SyncOutcome.UNCHANGED
+
+    if entry is None:
+        src_changed = True
+        dest_changed = True
+    else:
+        src_changed = current_src_cs != entry["src_checksum"]
+        dest_changed = current_dest_cs != entry["dest_checksum"]
+
+    if not src_changed and not dest_changed:
+        return SyncOutcome.UNCHANGED
+    if src_changed and not dest_changed:
+        return SyncOutcome.WILL_UPDATE
+    if not src_changed and dest_changed:
+        return SyncOutcome.LOCAL_MODIFIED
+    return SyncOutcome.WILL_CONFLICT
 
 
 def sync_file(
@@ -43,74 +83,51 @@ def sync_file(
     force: bool,
     dry_run: bool,
 ) -> Iterator[FileCopied | FileConflict | Skipped | Warning]:
-    # Case: src missing - can't do anything, just warn and skip.
-    if not src.exists():
-        yield Warning(f"not found, skipping: {src}")
-        return
-
-    current_src_cs = checksum(src)
-    new_entry: Entry = {
-        "src_rel": str(src),
-        "src_checksum": current_src_cs,
-        "dest_checksum": current_src_cs,
-        "synced_at": now_iso(),
-    }
+    outcome = predict_sync(src, dest, state)
     dest_key = str(dest)
-    entry = state["entries"].get(dest_key)
+    entries = state["entries"]
 
-    # Case: dest missing — copy unconditionally, no conflict possible.
-    if not dest.exists():
+    def update_state() -> None:
+        if not dry_run:
+            csum = checksum(src)
+            entries[dest_key] = {
+                "src_rel": str(src),
+                "src_checksum": csum,
+                "dest_checksum": csum,
+                "synced_at": now_iso(),
+            }
+
+    def copy_and_update_state() -> None:
         if not dry_run:
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dest)
-            state["entries"][dest_key] = new_entry
-        yield FileCopied(src=src, dest=dest, action="copied")
-        return
+            update_state()
 
-    current_dest_cs = checksum(dest)
+    match outcome:
+        case SyncOutcome.SRC_MISSING:
+            yield Warning(f"not found, skipping: {src}")
 
-    # Case: no entry, same checksum — adopt silently.
-    if entry is None and current_src_cs == current_dest_cs:
-        if not dry_run:
-            state["entries"][dest_key] = new_entry
-        yield Skipped(name=ppath(dest), details="unchanged")
-        return
+        case SyncOutcome.WILL_COPY:
+            copy_and_update_state()
+            yield FileCopied(src=src, dest=dest, action="copied")
 
-    if entry is None:
-        # No prior sync record — we can't tell who changed what, so treat
-        # both sides as changed to route into conflict-resolution below.
-        src_changed = True
-        dest_changed = True
-    else:
-        src_changed = current_src_cs != entry["src_checksum"]
-        dest_changed = current_dest_cs != entry["dest_checksum"]
+        case SyncOutcome.UNCHANGED:
+            update_state()
+            yield Skipped(name=ppath(dest), details="unchanged")
 
-    # Case: nothing changed — skip.
-    if not src_changed and not dest_changed:
-        yield Skipped(name=ppath(dest), details="unchanged")
-        return
+        case SyncOutcome.WILL_UPDATE:
+            copy_and_update_state()
+            yield FileCopied(src=src, dest=dest, action="updated")
 
-    # Case: only src changed — safe update, no conflict.
-    if src_changed and not dest_changed:
-        if not dry_run:
-            shutil.copy2(src, dest)
-            state["entries"][dest_key] = new_entry
-        yield FileCopied(src=src, dest=dest, action="updated")
-        return
+        case SyncOutcome.LOCAL_MODIFIED:
+            yield Warning(f"locally modified, skipping: {dest}")
 
-    # Case: only dest changed — local modification, leave alone.
-    if not src_changed and dest_changed:
-        yield Warning(f"locally modified, skipping: {dest}")
-        return
+        case SyncOutcome.WILL_CONFLICT:
+            yield FileConflict(dest=dest, description="both src and dest have changed")
+            do_overwrite = force or (not dry_run and ask_overwrite(dest))
 
-    # Case: both changed — conflict, prompt or force.
-    yield FileConflict(dest=dest, description="both src and dest have changed")
-    do_overwrite = force or (not dry_run and ask_overwrite(dest))
-
-    if do_overwrite:
-        if not dry_run:
-            shutil.copy2(src, dest)
-            state["entries"][dest_key] = new_entry
-        yield FileCopied(src=src, dest=dest, action="overwritten")
-    else:
-        yield Skipped(name=ppath(dest), details="kept local")
+            if do_overwrite:
+                copy_and_update_state()
+                yield FileCopied(src=src, dest=dest, action="overwritten")
+            else:
+                yield Skipped(name=ppath(dest), details="kept local")
