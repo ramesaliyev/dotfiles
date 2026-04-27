@@ -79,14 +79,6 @@ If new plugins were added, install them:
 Ctrl+A  then  I
 ```
 
-### Tips
-
-#### VS Code: Set ZSH as Default Terminal
-
-1. Press `Ctrl + Shift + P`
-2. Search: `Terminal: Select Default Profile`
-3. Select `zsh`
-
 ### Troubleshooting
 
 #### tmux opens the wrong shell

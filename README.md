@@ -7,6 +7,10 @@ uv run collect    # pull latest configs from this machine into the repo
 uv run bootstrap  # set up this machine from the repo
 ```
 
+## Tips
+
+Editor/tooling tweaks live in [setup/TIPS.md](setup/TIPS.md).
+
 ## Development
 
 See [dev/README.md](dev/README.md).
