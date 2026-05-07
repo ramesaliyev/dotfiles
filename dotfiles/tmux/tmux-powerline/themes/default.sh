@@ -150,7 +150,7 @@ if [ -z "$TMUX_POWERLINE_RIGHT_STATUS_SEGMENTS" ]; then
 	    #   fi
 	    # )"
 		#"xkb_layout 125 117"
-		#"tmux_continuum_save"
+		"tmux_continuum_save"
 		#"tmux_continuum_status 14 7"
 		"date_day 235 136"
 		"date 235 136 ${TMUX_POWERLINE_SEPARATOR_LEFT_THIN}"
