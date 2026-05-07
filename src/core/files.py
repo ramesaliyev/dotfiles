@@ -56,7 +56,9 @@ def predict_sync(src: Path, dest: Path, state: State) -> SyncOutcome:
     current_dest_cs = checksum(dest)
     entry = state["entries"].get(str(dest))
 
-    if entry is None and current_src_cs == current_dest_cs:
+    # If src and dest already match byte-for-byte, there's nothing to copy
+    # regardless of state history (e.g. both sides were edited to the same value).
+    if current_src_cs == current_dest_cs:
         return SyncOutcome.UNCHANGED
 
     if entry is None:
